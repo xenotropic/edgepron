@@ -41,3 +41,12 @@ reuses it for up to 8 hours or until the container rebuilds. The PAT is never
 written to disk. git ignores VS Code's host-keychain helper because its line is
 removed from /etc/gitconfig (session) and GIT_CONFIG_NOSYSTEM=1 is set in
 .devcontainer/devcontainer.json + .devcontainer/Dockerfile (rebuild). See AGENTS.md rule 5.
+# NTFY NOTIFICATION RULE (act mode)
+Send the user an ntfy push alert at two mandatory points in every turn, using
+the commands in `resources/ntfy` (see AGENTS.md "Notifications to User"):
+
+1. BEFORE asking the user a question — send the "question" alert.
+2. As the LAST action before ending the turn (right before the final summary) —
+   send the "wrapping up" alert.
+
+Treat these as a completion-checklist item, not an afterthought.

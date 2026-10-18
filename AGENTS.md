@@ -84,4 +84,15 @@ GitHub Release attached to the tag. Only do this when explicitly instructed.
   the gitignored `resources/` directory. You should feel welcome to download other data sources, make throwaway scripts, or use other things that you need to in that file. Ask for user permission before downloading something that's going to be bigger than 2 gb
 
 ## Notifications to User
-See the instructions in resources/ntfy about notifying the user when you have a question or when you are complete with the task.
+
+Send the user an ntfy push alert at two specific, mandatory points in every
+turn. The exact `curl` commands live in `resources/ntfy`; run them verbatim.
+
+1. **Before asking the user a question** (via the `ask` tool or otherwise) —
+   send the "question" alert.
+2. **As the very last action before ending the turn** (right before writing the
+   final summary) — send the "wrapping up" alert.
+
+These are easy to miss because they sit at the end of a long task; treat them
+as part of the task's completion checklist, not an afterthought (see also the
+NTFY NOTIFICATION RULE in `.clinerules`).
