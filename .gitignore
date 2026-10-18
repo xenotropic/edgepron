@@ -28,7 +28,6 @@ ENV/
 .vscode/
 .DS_Store
 Thumbs.db
-.clinerules
 
 # --- Secrets & credentials (never commit) ---
 .env

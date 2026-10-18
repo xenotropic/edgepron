@@ -1,0 +1,43 @@
+# DEV CONTAINER DEPENDENCY MANAGEMENT RULE
+When a task requires installing new system-level software or Linux packages via `apt-get`:
+
+1. **Update the Dockerfile First**:
+   - Add the package to the `RUN apt-get update && apt-get install -y` block in `.devcontainer/Dockerfile`.
+   - Maintain clean multi-line formatting (using trailing backslashes `\`) and alphabetize package names where appropriate.
+
+2. **Install for the Active Session**:
+   - Execute `sudo apt-get update && sudo apt-get install -y <package>` in the terminal so the binary is immediately available for the current task.
+
+3. **Do Not Rebuild Immediately**:
+   - Do not trigger a container rebuild immediately after installation unless explicitly requested by the user. Let the current task finish, knowing the `Dockerfile` edit will lock the dependency in for future rebuilds.
+
+# GIT CREDENTIAL PRIMING RULE (act mode)
+At the start of every act-mode task, before any other git work, ensure the
+in-memory PAT cache is warm so pushes/pulls don't re-prompt mid-task:
+
+1. Ensure the ephemeral helper is set (idempotent):
+
+       git config --global credential.helper 'cache --timeout=28800'
+
+2. Probe auth WITHOUT hanging (this is a non-interactive shell: do not let git
+   fall back to VS Code's askpass, and disable terminal prompts):
+
+       cd /workspaces/edge-lexphon && env -u GIT_ASKPASS GIT_TERMINAL_PROMPT=0 GIT_CONFIG_NOSYSTEM=1 timeout 20 git push --dry-run origin HEAD
+
+   - `Everything up-to-date` (exit 0) → PAT already cached; proceed with git work.
+   - `fatal: could not read Username ...` (exit 128) → cache is empty. You CANNOT
+     prompt the user from a non-interactive shell (it would hang), so STOP and ask
+     them (in chat) to run this in their VS Code terminal, then paste username + PAT:
+
+       cd /workspaces/edge-lexphon && env -u GIT_ASKPASS GIT_CONFIG_NOSYSTEM=1 git push --dry-run origin main
+
+     That push connects and authenticates (it never updates refs), so it prompts
+     once and caches the PAT. Resume git work only after the user confirms — do not
+     run that user-facing command yourself.
+
+The `cache --timeout=28800` helper holds the PAT in a shared in-memory daemon
+(`~/.cache/git/credential/`), so every shell in the container (including this one)
+reuses it for up to 8 hours or until the container rebuilds. The PAT is never
+written to disk. git ignores VS Code's host-keychain helper because its line is
+removed from /etc/gitconfig (session) and GIT_CONFIG_NOSYSTEM=1 is set in
+.devcontainer/devcontainer.json + .devcontainer/Dockerfile (rebuild). See AGENTS.md rule 5.

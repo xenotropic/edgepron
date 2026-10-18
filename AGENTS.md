@@ -25,22 +25,30 @@ this project is versioned, built, and committed.
 4. The directory .todo is in the repository and (exception to point 1) 
    is tracked and should be kept in sync (pull at start of job / push   at end) 
    on each turn by agents unless something else instructs you not to. 
-5. **Prime git credentials at task start.** Before doing any other git work in
-   a task, warm the credential cache so pushes/pulls don't re-prompt mid-task.
-   Run a no-change write-auth probe (a *dry-run* — it never updates the remote,
-   so it is an explicit exception to rule 1):
+5. **Prime git credentials at task start.** Credentials live in an in-memory
+   cache (the `git-credential-cache` daemon) shared by every shell in the
+   container. The PAT is never written to disk and expires after 8h or a
+   container rebuild. Two ways to refresh it:
 
-   ```bash
-   git config --global credential.helper 'cache --timeout=28800'  # idempotent; 8h in-memory
-   git push --dry-run origin HEAD                                  # prompts if the PAT is uncached; changes nothing
-   ```
+   - **Agents** (non-interactive shells) must probe without hanging and delegate
+     to the user when the cache is empty — see `.clinerules` → "GIT CREDENTIAL
+     PRIMING RULE" for the exact probe/fallback commands.
+   - **Humans** (interactive terminal) can prime the cache in one step — git
+     prompts for `Username` (your GitHub login) and `Password` (paste the
+     fine-grained PAT; it is not echoed), then caches it:
 
-   Credentials are held in-memory only (the `git-credential-cache` daemon) for
-   at most 8 hours and are never written to disk, so a PAT can't be replayed
-   after the agent has stepped away. The Dev Containers extension injects a
-   host-keychain credential helper into `/etc/gitconfig` at container start;
-   `GIT_CONFIG_NOSYSTEM=1` (set in `.devcontainer/devcontainer.json`) disables
-   it so git never falls back to the indefinite host keychain.
+     ```bash
+     cd /workspaces/edge-lexphon && env -u GIT_ASKPASS GIT_CONFIG_NOSYSTEM=1 git push --dry-run origin main
+     ```
+
+     (`env -u GIT_ASKPASS` forces git's inline terminal prompt rather than VS
+     Code's askpass dialog; `--dry-run` authenticates but never updates refs.)
+
+   The Dev Containers extension injects a host-keychain credential helper into
+   `/etc/gitconfig` at container start; we neuter it — the entry is removed for
+   the session, and `GIT_CONFIG_NOSYSTEM=1` is set in `.devcontainer/devcontainer.json`
+   + `.devcontainer/Dockerfile` so it stays ignored after any rebuild — leaving
+   git with only the ephemeral 8h cache.
 ## Todo index (.todo/index)
 
 The file `.todo/index` is a quick-reference listing of every ticket in this
