@@ -23,3 +23,6 @@ database plus a compressed TSV.
 - Both IPA and respell are recorded when present; if a missing form is
   synthesized it is stored with `derived=true`.
 - Tests pass.
+==reply==
+Okay, go ahead and do it. Make sure to have parameters for what the outputs are, compressed TSV, regular TSV, SQLite, all. Like, as a human testing, I'd rather just have unzipped TSVs when I'm doing small sets to test just to see what they look like.
+The other thing I'm not sure about, but let's just leave it to your sense of what to do. The end result, we don't want IPA or respell, we just want a phonetic pronunciation from dictionary word, just two rows. I can see how we might want to have an intermediate that preserves information about source origin with two columns: one for IPA one for respell. But let's have an output possibility for condensing output down to just one lookup table of written text to phonetic text, where the IPA is all converted (and vice versa if cheap and easy, but IPA is not for me a desired output type -- yet).
