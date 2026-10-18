@@ -1,0 +1,41 @@
+# ─── Gradle / Android build outputs ────────────────────────────────────────────
+build/
+app/build/
+**/build/
+/captures
+.externalNativeBuild
+.cxx
+
+# ─── Built application artifacts ───────────────────────────────────────────────
+*.apk
+*.aab
+*.ap_
+*.aab_
+
+# ─── Local machine configuration (never commit) ────────────────────────────────
+local.properties
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+.clinerules
+# ─── Signing keys & secrets ────────────────────────────────────────────────────
+*.jks
+*.keystore
+*.p12
+*.pfx
+keystore.properties
+.signing/
+**/*.jks
+**/*.keystore
+
+# ─── Developer / internal files (do not publish) ───────────────────────────────
+wcast-instructions.md
+resources/
+runtimelogs/
+
+# ─── Runtime & debug artifacts ─────────────────────────────────────────────────
+*.log
+*.hprof
+heapdump/
