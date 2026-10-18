@@ -3,6 +3,9 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "containerEnv": {
+    "GIT_CONFIG_NOSYSTEM": "1"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -12,5 +15,5 @@
       ]
     }
   },
-  "remoteUser": "vscode",
+  "remoteUser": "vscode"
 }
