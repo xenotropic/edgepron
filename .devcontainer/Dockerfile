@@ -10,3 +10,10 @@ ENV GIT_CONFIG_NOSYSTEM=1
 # time. Run as the container's vscode user (the runtime user) so `--global`
 # lands in /home/vscode/.gitconfig instead of root's.
 RUN su - vscode -c "git config --global credential.helper 'cache --timeout=28800'"
+
+# Project Python dependencies (phase 1: Wikipedia extraction + tests).
+RUN pip install --no-cache-dir \
+    'mwparserfromhell>=0.6' \
+    'PyYAML>=6.0' \
+    'requests>=2.31' \
+    'pytest>=8.0'

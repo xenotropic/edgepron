@@ -1,0 +1,19 @@
+# lexphon configuration — every tunable plus safe local-dev defaults.
+# Any value here is overridden by the corresponding CLI flag.
+
+base_url: "https://en.wikipedia.org/w/api.php"
+rest_base_url: "https://wikimedia.org/api/rest_v1"
+user_agent: "lexphon/0.1 (https://github.com/xenotropic/lexphon)"
+
+api_chunk_size: 50         # titles per extraction batch
+rate_limit_sleep: 0.0      # polite delay between requests (seconds)
+timeout: 30
+max_retries: 3
+
+vital_level: 1             # 0 disables vital-articles discovery
+popular_limit: 0           # 0 disables pageviews discovery
+popularity_timeframe: last-month   # last-day | last-month
+min_pageviews: 0
+titles: []                 # optional explicit titles (`--titles` overrides)
+
+low_memory: true

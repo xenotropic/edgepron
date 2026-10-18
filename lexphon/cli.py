@@ -1,0 +1,160 @@
+"""Command-line entry point: ``python -m lexphon.cli``.
+
+Builds a pronunciation dictionary from English Wikipedia lead sections.
+All output types are opt-in via flags:
+
+- ``--sqlite PATH``         full ``WITHOUT ROWID`` SQLite DB
+- ``--tsv PATH``            full six-column TSV (uncompressed)
+- ``--tsv-gz PATH``         full six-column TSV (gzip-compressed)
+- ``--condensed PATH``      two-column ``word <TAB> phonetic`` lookup
+                            (``.gz`` suffix compresses)
+
+Discovery depth is controlled with ``--vital-level``, ``--popular-limit`` and
+``--titles``. Set a limit/level to ``0`` to disable that source.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+
+import requests
+
+from lexphon.config import load_config
+from lexphon.discovery import dedupe, fetch_top_pageviews, fetch_vital_titles
+from lexphon.extraction import diaphonemes, extract_pronunciations, fetch_leads
+from lexphon.model import Entry
+from lexphon.storage import write_condensed, write_sqlite, write_tsv
+
+
+def _default_config_path() -> str:
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="python -m lexphon.cli",
+        description="Build a pronunciation dictionary from English Wikipedia lead sections.",
+    )
+    parser.add_argument("--config", help="path to config.yaml")
+    parser.add_argument("--mode", choices=["api", "toolforge"], default=None,
+                        help="data source (toolforge is not implemented in phase 1)")
+    discovery = parser.add_argument_group("discovery")
+    discovery.add_argument("--vital-level", type=int, default=None,
+                           help="vital-articles level to fetch (0 disables)")
+    discovery.add_argument("--popular-limit", type=int, default=None,
+                           help="number of top-pageview articles (0 disables)")
+    discovery.add_argument("--popularity-timeframe", choices=["last-day", "last-month"],
+                           default=None)
+    discovery.add_argument("--min-pageviews", type=int, default=None)
+    discovery.add_argument("--titles", default=None,
+                           help="comma-separated explicit titles to fetch")
+    output = parser.add_argument_group("output (at least one required)")
+    output.add_argument("--sqlite", default=None)
+    output.add_argument("--tsv", default=None)
+    output.add_argument("--tsv-gz", default=None)
+    output.add_argument("--condensed", default=None)
+    output.add_argument("--condensed-phonetic", choices=["respell", "ipa"], default=None,
+                        help="which form the condensed lookup emits (default: respell)")
+    tuning = parser.add_argument_group("tuning")
+    tuning.add_argument("--api-chunk-size", type=int, default=None)
+    tuning.add_argument("--rate-limit-sleep", type=float, default=None)
+    tuning.add_argument("--user-agent", default=None)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+
+    outputs = [o for o in (args.sqlite, args.tsv, args.tsv_gz, args.condensed) if o]
+    if not outputs:
+        print("error: no output specified (use --sqlite, --tsv, --tsv-gz, and/or --condensed)",
+              file=sys.stderr)
+        return 2
+
+    if args.mode == "toolforge":
+        print("error: --mode toolforge is not implemented in phase 1; use --mode api", file=sys.stderr)
+        return 2
+
+    cfg = load_config(args.config or _default_config_path(), {
+        "vital_level": args.vital_level,
+        "popular_limit": args.popular_limit,
+        "popularity_timeframe": args.popularity_timeframe,
+        "min_pageviews": args.min_pageviews,
+        "api_chunk_size": args.api_chunk_size,
+        "rate_limit_sleep": args.rate_limit_sleep,
+        "user_agent": args.user_agent,
+    })
+    if args.titles is not None:
+        cfg.titles = [t.strip() for t in args.titles.split(",") if t.strip()]
+
+    session = requests.Session()
+    session.headers["User-Agent"] = cfg.user_agent
+
+    source_lists: list[list[str]] = [cfg.titles]
+    if cfg.vital_level:
+        print(f"discovering vital articles (level {cfg.vital_level})...", file=sys.stderr)
+        source_lists.append(fetch_vital_titles(
+            cfg.vital_level, cfg.base_url, session, cfg.timeout, cfg.max_retries, cfg.rate_limit_sleep))
+    if cfg.popular_limit:
+        print(f"discovering top pageviews (limit {cfg.popular_limit}, {cfg.popularity_timeframe})...",
+              file=sys.stderr)
+        source_lists.append([
+            title for title, _views in fetch_top_pageviews(
+                cfg.popular_limit, cfg.popularity_timeframe, cfg.rest_base_url, session,
+                cfg.min_pageviews, cfg.timeout, cfg.max_retries, cfg.rate_limit_sleep)
+        ])
+
+    titles = dedupe(*source_lists)
+    print(f"candidates: {len(titles)}", file=sys.stderr)
+    if not titles:
+        print("no candidates to fetch", file=sys.stderr)
+        return 1
+
+    entries: list[Entry] = []
+    print("fetching lead sections...", file=sys.stderr)
+    for title, wikitext in fetch_leads(
+        titles, cfg.base_url, session, cfg.api_chunk_size,
+        cfg.rate_limit_sleep, cfg.timeout, cfg.max_retries,
+    ):
+        entry = _build_entry(title, extract_pronunciations(wikitext))
+        if entry is not None:
+            entries.append(entry)
+
+    if args.sqlite:
+        write_sqlite(entries, args.sqlite, low_memory=cfg.low_memory)
+        print(f"wrote {len(entries)} rows -> {args.sqlite}", file=sys.stderr)
+    if args.tsv:
+        write_tsv(entries, args.tsv)
+        print(f"wrote {len(entries)} rows -> {args.tsv}", file=sys.stderr)
+    if args.tsv_gz:
+        target = args.tsv_gz if args.tsv_gz.endswith(".gz") else args.tsv_gz + ".gz"
+        write_tsv(entries, target)
+        print(f"wrote {len(entries)} rows -> {target}", file=sys.stderr)
+    if args.condensed:
+        phonetic = args.condensed_phonetic or "respell"
+        n = write_condensed(entries, args.condensed, phonetic=phonetic)
+        print(f"wrote {n} rows -> {args.condensed}", file=sys.stderr)
+
+    print(f"done: {len(entries)} pronunciations extracted", file=sys.stderr)
+    return 0
+
+
+def _build_entry(word: str, extracted) -> Entry | None:
+    ipa, respell = extracted.ipa, extracted.respell
+    ipa_derived = respell_derived = False
+    if ipa is None and respell:
+        ipa = diaphonemes.respell_to_ipa(respell) or None
+        ipa_derived = ipa is not None
+    if respell is None and ipa:
+        respell = diaphonemes.ipa_to_respell(ipa) or None
+        respell_derived = respell is not None
+    if ipa is None and respell is None:
+        return None
+    return Entry(word=word, ipa=ipa, respell=respell,
+                 ipa_derived=ipa_derived, respell_derived=respell_derived)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
