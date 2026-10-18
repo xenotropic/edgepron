@@ -1,41 +1,45 @@
-# ─── Gradle / Android build outputs ────────────────────────────────────────────
+# --- Python bytecode & caches ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# --- Distribution / packaging ---
 build/
-app/build/
-**/build/
-/captures
-.externalNativeBuild
-.cxx
+dist/
+*.egg-info/
+.eggs/
+*.whl
 
-# ─── Built application artifacts ───────────────────────────────────────────────
-*.apk
-*.aab
-*.ap_
-*.aab_
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
 
-# ─── Local machine configuration (never commit) ────────────────────────────────
-local.properties
+# --- Local machine configuration (never commit) ---
 .idea/
 *.iml
 .vscode/
 .DS_Store
 Thumbs.db
 .clinerules
-# ─── Signing keys & secrets ────────────────────────────────────────────────────
-*.jks
-*.keystore
-*.p12
-*.pfx
-keystore.properties
-.signing/
-**/*.jks
-**/*.keystore
 
-# ─── Developer / internal files (do not publish) ───────────────────────────────
-wcast-instructions.md
+# --- Secrets & credentials (never commit) ---
+.env
+*.pem
+.git-credentials
+
+# --- Developer / internal files (do not publish) ---
 resources/
 runtimelogs/
 
-# ─── Runtime & debug artifacts ─────────────────────────────────────────────────
+# --- Runtime & debug artifacts ---
 *.log
 *.hprof
 heapdump/
