@@ -1,0 +1,79 @@
+==Original Issue==
+Title of this ticket is both descriptive, but it is also the package that I want to look at. So look at this ticket in combination with three for some background context, and in order to get that respell for IPA that we discover. I think probably the best way to do it is going to be this other Wikipedia downstream project that is called https://github.com/Attacktive/ipa-to-pronunciation-respelling (well that's the URL but you get the idea). Rather than reinventing that wheel, I think what I want to do is take it in its current state and port it to Python to incorporate into this project. There's a clone of the repository already in the resources subdirectory, which is gitignored. Take a look at that and evaluate porting its core functionality to Python into this project. The goal is that when we find an IPA, it just gets converted into respell so that we're able to output a two-column table for keys that we discover with only IPA guidance.
+
+==Status Report: 2026-10-19 10:04 PDT==
+Feasibility: HIGH, well-scoped — no code written this pass.
+
+Clone state in resources/ipa-to-pronunciation-respelling: HEAD at 3.5.1-20-g82cc029
+(v3.5.1 + 20 commits). Only four files matter for the port; the web UI (index.ts,
+main.ts, styles, vite config) and random-words.ts are irrelevant:
+  src/scripts/mappings.ts    # symbol table (~70 consonants + ~45 vowels)
+  src/scripts/parser.ts      # NFD normalization + tokenizer (~200 lines)
+  src/scripts/syllabifier.ts # syllable-boundary inference (~155 lines)
+  src/scripts/converter.ts   # assembles tokens -> respelling (~80 lines)
+
+What "port to Python" means (lexphon/extraction/ipa_respell.py, or a small
+lexphon/respell/ package, exposing ipa_to_canonical_respell(ipa: str) -> str):
+
+1. mappings.ts -> a data table. One IpaSymbol per phoneme: {ipa, canonical
+   respelling, category (vowel/glide/liquid/nasal/fricative/affricate/stop),
+   sonority, support (english | safe-alias | reference-foreign)}. Mechanical:
+   reproduce as a Python dataclass + dict, derive phonemeChunks (longest-first,
+   length marks stripped) and ignoredSymbols (tie bars U+0361/U+035C + hyphen).
+   Do NOT reuse lexphon/extraction/_ipac_table.py — that is the IPAc-en dialect
+   -> IPA table; this is a different IPA -> English respelling table.
+
+2. parser.ts -> tokenizer. Reproduce faithfully, including the subtle parts:
+   - unicodedata.normalize('NFD', ipa) first.
+   - cleanIpa: strip the outer parens only when they wrap the whole input, then
+     remove ignored symbols (tie bars, hyphen).
+   - Token-consumer priority order = parenthesis, stress (ˈ primary / ˌ
+     secondary), boundary (space or period), literal (/ [ ]), syllabicity
+     diacritics (U+030D/U+0329 syllabic; U+032F non-syllabic), longest-match
+     phoneme (skip a r-colored vowel chunk when the next segment is a vowel),
+     then ignored phonetic marks (ː ʰ ˑ).
+   - matchCandidateAt skips an interleaved length mark 'ː' while still matching
+     the rest of the chunk (this is what cleanly handles ɑː, uː, etc.); carry it
+     over verbatim.
+   - Errors mirror upstream: unknown symbol -> raise naming the offending symbol;
+     unclosed optional group / unmatched ')' -> raise.
+
+3. syllabifier.ts -> boundary inference. Port LEGAL_ONSET_CLUSTERS,
+   NON_ONSET_PHONEMES (ŋ, ɴ, ŋk), ONSET_EQUIVALENTS (ɡ->g, ɹ/ɾ/ɽ/ʁ->r, ɫ->l),
+   isVowel/isNucleus (explicit syllabicity flag wins, else category=='vowel'),
+   then maximal-onset boundary placement across nuclei with region breaks at
+   stress/boundary/literal tokens.
+
+4. converter.ts -> convert(). Walk tokens, accumulate a current syllable,
+   uppercase the syllable following a primary stress (secondary stress ends the
+   pending capitalization but emits no marker), explicit boundary -> space,
+   optional group -> literal '(' / ')' preserved, literals preserved, then strip
+   empty '()' groups. Straightforward.
+
+Acceptance contract — the highest-value part: port the upstream tests.
+scheme-conformance.test.ts (23 convert cases + 5 unsupported cases) and
+converter.test.ts (~50 cases) should come over as pytest parametrized tests
+(byte-for-byte identical inputs/expected outputs). That proves the Python port is
+a faithful port, not a re-implementation with silent drift.
+
+Integration & policy decisions:
+- The port *rejects* unsupported IPA (raises) rather than approximating. Real
+  Wikipedia {{IPAc-en}} output frequently contains symbols outside this English
+  inventory (ʔ, tap ɾ, χ for non-English names; some rhotic/disambiguation
+  forms). So the caller needs a fallback policy: try the canonical port first;
+  on failure fall back to the existing diaphonemes.ipa_to_respell() best-effort,
+  and keep respell_derived=true plus a provenance note (e.g. respell_method
+  'canonical' vs 'heuristic'). Smoke-test over a sample of real extracted IPA to
+  measure the failure rate before committing to any policy.
+- Licensing: upstream is MIT (Copyright 2023 Attacktive). The Python port must
+  carry an attribution header in the new module ("Portions copyright 2023
+  Attacktive, MIT") — compatible with this repo's MIT. resources/ is gitignored so
+  the clone stays unpublished; the ported code will be tracked and must retain
+  the notice.
+- Re-sync the clone before porting (it is 20 commits past v3.5.1) to pick up any
+  mapping fixes, then record the pinned commit in the port's header for
+  reproducibility.
+
+Difficulty ~4 (the Unicode/NFD tokenizer + syllabifier are the only fiddly parts;
+the test corpus makes parity checkable). Suggest doing this ticket first, then
+ticket 3 consumes it. 

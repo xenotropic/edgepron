@@ -1,4 +1,5 @@
-Evaluate using spacy en_core_web_sm to find people, places, and geopolitical entities that would likely need to have their pronunciation looked at. filter with ordinary dictionary to remove false positives. 
+==Original Issue==
+Evaluate using spacy en_core_web_sm to find people, places, and geopolitical entities that would likely need to have their pronunciation looked at. filter with ordinary dictionary to remove false positives.
 ===example===
 import spacy
 
@@ -11,3 +12,52 @@ doc = nlp(text)
 # Extract proper nouns (People, Locations, Entities)
 proper_nouns = [ent.text for ent in doc.ents if ent.label_ in ("PERSON", "GPE", "LOC", "ORG")]
 # Result: ['Maximilien Robespierre', 'Jacobin Club', 'Paris']
+
+==Status Report: 2026-10-19 10:04 PDT==
+Feasibility: HIGH — architectural note only, no code written this pass.
+
+This is a *discovery* feature, so it belongs in lexphon/discovery/ as a third
+source alongside vital.py and popular.py — e.g. discovery/corpus_ner.py exposing
+a function that returns a list[str] of candidate titles. Those candidates then
+flow through the existing dedupe() -> fetch_leads() -> extract_pronunciations()
+pipeline unchanged, so it composes cleanly with the phase-1 CLI (a new
+`--ner-text FILE` / `--ner-corpus` flag would sit next to `--vital-level` and
+`--popular-limit`).
+
+Key architectural points / gotchas:
+
+1. spaCy yields *surface mentions*, not canonical Wikipedia titles. "Paris" or
+   "Robespierre" must be resolved to a single article title before the fetch, or
+   the fetch 404s. Recommend action=query&list=search (or a Wikidata search) to
+   normalize each mention. Multi-word PERSON/GPE mentions are the highest-value
+   case; casing must be preserved (Wikipedia titles are title-cased, NER gives
+   the source text's casing).
+
+2. Where does the NER input text come from? Two options:
+   - (Recommended, cheap) Run NER over the lead sections the phase-1 pipeline
+     already fetches — reuse the fetch and discover *secondary* entities.
+   - (Heavier) A dedicated corpus / Wikipedia dump. Anything >2 GB needs explicit
+     user permission per AGENTS.md, so lead-reuse is the sensible default.
+
+3. "Filter with an ordinary dictionary" removes NEs that are really common words
+   so TTS doesn't need them. Pitfall: case-insensitive membership is wrong —
+   "August", "May", "Turkey" vs "turkey" are real targets that a lowercase
+   lookup would wrongly drop. Recommend: only drop a mention when its lowercase
+   form is a common-English word AND the surface form is not title-cased, or lean
+   on the NER labels (PERSON/GPE/LOC are strong signals) and only
+   dictionary-filter ORG. Data: a small pinned wordlist (e.g. wordfreq, or a
+   plain wordlist file in resources/); avoid /usr/share/dict/words (not portable).
+
+4. Dependency note: spaCy + en_core_web_sm (~15 MB) must land in requirements.txt
+   (or an optional extra), and the model install is `python -m spacy download
+   en_core_web_sm`, not plain pip — that complicates reproducible installs.
+   Decide whether this is a hard dep or an optional[ner] extra so the core CLI
+   stays dependency-light.
+
+5. Minor spec mismatch to confirm: the prose lists PERSON/GPE/LOC but the example
+   also returns ORG ("Jacobin Club"). ORG is the lowest-value label for
+   pronunciation (org names are usually ordinary words); decide whether to keep it.
+
+Suggested order: ticket 4 (converter) -> ticket 3 (default output) -> this. Ship
+it as its own discovery layer with a unit test (fixed sentence -> expected
+deduped candidate list).

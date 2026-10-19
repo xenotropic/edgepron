@@ -1,0 +1,43 @@
+==Original Issue==
+Really, the problem I'm trying to solve here is to get a Wikipedia article that has all of the difficult to pronounce words respelled. Pocket TTS is the initial target, and so IPA is less valuable. There could be other TTS engines for which IPA will be valuable. But for right now, let's have the default output for testing purposes be just the key text and then the value, which is respell pronunciation. You can leave all of the existing code to write a multi-column TSV or database. But if there are no parameters, then the default output is just two column TSV. This will also relate to O4 about converting IPA to respell.
+
+==Status Report: 2026-10-19 10:04 PDT==
+Feasibility: HIGH and small — most of the machinery already exists; no code
+written this pass.
+
+The condensed writer already has the exact desired shape: storage/tsv_writer.py
+write_condensed() emits `word<TAB>phonetic` and already defaults to
+phonetic="respell". Today it is only reachable behind `--condensed PATH`, and
+running the CLI with no output flag is a hard error (cli.py main(): "no output
+specified" -> exit 2).
+
+Change required: in cli.py, when none of --sqlite/--tsv/--tsv-gz/--condensed is
+supplied, default to emitting the two-column respell table instead of erroring.
+Two decisions to settle first:
+
+1. Destination: recommend stdout (print the lines) for the "testing purposes"
+   use case — easy to eyeball or redirect (`... > out.tsv`). A default file
+   (e.g. dist/pronunciations.tsv) is the alternative. Pick stdout as the
+   minimal-surprise default; an explicit -o/--output can come later if wanted.
+
+2. Header or not: write_condensed() currently writes a `word\tphonetic` header.
+   For eyeballing that is fine; for feeding a TTS lookup table a headerless file
+   is conventional. Recommend: headerless when writing to stdout (data only),
+   keep the header for an explicit `--condensed PATH` file. Make this a conscious
+   choice at implementation time.
+
+Dependency on ticket 4: for IPA-only keys, the value column today falls back to
+diaphonemes.ipa_to_respell() (a lossy, heuristic Wikipedia-key conversion, marked
+respell_derived=true). Ticket 4's ported converter should replace that fallback so
+the default output's respell column is high quality. Net rule for the default
+column: native {{respell}} when present; otherwise ticket-4 IPA->respell; skip if
+neither is available.
+
+Respell-scheme note to decide before wiring: native {{respell}} values use
+Wikipedia's scheme (e.g. "yoh-SEM-ih-tee"), while ticket 4's port uses a different
+canonical scheme (e.g. STRIHKT, no hyphen-syllable caps). The default two-column
+output will therefore mix two respelling conventions — acceptable for a first cut
+but should be documented in the output spec, and possibly normalized later.
+
+Difficulty ~2. No schema changes; a handful of lines in cli.py plus the two
+decisions above.
