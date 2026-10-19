@@ -1,0 +1,13 @@
+Evaluate using spacy en_core_web_sm to find people, places, and geopolitical entities that would likely need to have their pronunciation looked at. filter with ordinary dictionary to remove false positives. 
+===example===
+import spacy
+
+# Load classical, lightweight CPU-optimized model (~15MB)
+nlp = spacy.load("en_core_web_sm")
+
+text = "During the French Revolution, Maximilien Robespierre delivered speeches at the Jacobin Club in Paris."
+doc = nlp(text)
+
+# Extract proper nouns (People, Locations, Entities)
+proper_nouns = [ent.text for ent in doc.ents if ent.label_ in ("PERSON", "GPE", "LOC", "ORG")]
+# Result: ['Maximilien Robespierre', 'Jacobin Club', 'Paris']
