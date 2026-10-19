@@ -15,6 +15,10 @@ this project is versioned, built, and committed.
   history, but this repository is maintained through Cline.
   **General intent:** To create a Python utility that constructs a dictionary to look up words that TTS engines struggle with, particularly proper nouns, foreign language words, foreign language phrases, abbreviations and acronyms and convert them to either IPA or respell (or both). 
 
+## Output language
+
+All agent output (summaries, status reports, ticket notes, commit messages, and any prose replies to the user) must be written in English. The underlying model occasionally emits other languages (e.g. Chinese); re-render any such output in English before it reaches the user.
+
 ## Git & CI conventions (IMPORTANT — must be followed)
 
 1. **Commit locally only.** Never run `git push` unless the user (or another rule here, see e.g., 6) explicitly
