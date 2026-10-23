@@ -3,6 +3,12 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "runArgs": [
+    "--add-host=host.docker.internal:host-gateway"
+  ],
+  "mounts": [
+    "source=vscode-global-storage,target=/home/vscode/.vscode-server/data/User/globalStorage,type=volume"
+  ],
   "containerEnv": {
     "GIT_CONFIG_NOSYSTEM": "1"
   },

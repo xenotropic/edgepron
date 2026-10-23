@@ -17,3 +17,7 @@ RUN pip install --no-cache-dir \
     'PyYAML>=6.0' \
     'requests>=2.31' \
     'pytest>=8.0'
+
+RUN mkdir -p /home/vscode/.vscode-server/data/User/globalStorage \
+    && chown -R vscode:vscode /home/vscode/.vscode-server
+    
