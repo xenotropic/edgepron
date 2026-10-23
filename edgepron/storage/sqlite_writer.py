@@ -6,7 +6,7 @@ import os
 import sqlite3
 from collections.abc import Iterable
 
-from lexphon.model import Entry
+from edgepron.model import Entry
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pronunciations (

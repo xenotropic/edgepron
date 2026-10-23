@@ -12,15 +12,15 @@ main.ts, styles, vite config) and random-words.ts are irrelevant:
   src/scripts/syllabifier.ts # syllable-boundary inference (~155 lines)
   src/scripts/converter.ts   # assembles tokens -> respelling (~80 lines)
 
-What "port to Python" means (lexphon/extraction/ipa_respell.py, or a small
-lexphon/respell/ package, exposing ipa_to_canonical_respell(ipa: str) -> str):
+What "port to Python" means (edgepron/extraction/ipa_respell.py, or a small
+edgepron/respell/ package, exposing ipa_to_canonical_respell(ipa: str) -> str):
 
 1. mappings.ts -> a data table. One IpaSymbol per phoneme: {ipa, canonical
    respelling, category (vowel/glide/liquid/nasal/fricative/affricate/stop),
    sonority, support (english | safe-alias | reference-foreign)}. Mechanical:
    reproduce as a Python dataclass + dict, derive phonemeChunks (longest-first,
    length marks stripped) and ignoredSymbols (tie bars U+0361/U+035C + hyphen).
-   Do NOT reuse lexphon/extraction/_ipac_table.py — that is the IPAc-en dialect
+   Do NOT reuse edgepron/extraction/_ipac_table.py — that is the IPAc-en dialect
    -> IPA table; this is a different IPA -> English respelling table.
 
 2. parser.ts -> tokenizer. Reproduce faithfully, including the subtle parts:

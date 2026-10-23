@@ -1,4 +1,4 @@
-"""Command-line entry point: ``python -m lexphon.cli``.
+"""Command-line entry point: ``python -m edgepron.cli``.
 
 Builds a pronunciation dictionary from English Wikipedia lead sections.
 All output types are opt-in via flags:
@@ -21,11 +21,11 @@ import sys
 
 import requests
 
-from lexphon.config import load_config
-from lexphon.discovery import dedupe, fetch_top_pageviews, fetch_vital_titles
-from lexphon.extraction import diaphonemes, extract_pronunciations, fetch_leads
-from lexphon.model import Entry
-from lexphon.storage import write_condensed, write_sqlite, write_tsv
+from edgepron.config import load_config
+from edgepron.discovery import dedupe, fetch_top_pageviews, fetch_vital_titles
+from edgepron.extraction import diaphonemes, extract_pronunciations, fetch_leads
+from edgepron.model import Entry
+from edgepron.storage import write_condensed, write_sqlite, write_tsv
 
 
 def _default_config_path() -> str:
@@ -34,7 +34,7 @@ def _default_config_path() -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="python -m lexphon.cli",
+        prog="python -m edgepron.cli",
         description="Build a pronunciation dictionary from English Wikipedia lead sections.",
     )
     parser.add_argument("--config", help="path to config.yaml")

@@ -2,7 +2,7 @@
 
 Sources:
 - ``Module:IPAc-en/phonemes`` — diaphoneme code -> IPA label table (kept
-  machine-generated in ``lexphon.extraction._ipac_table``).
+  machine-generated in ``edgepron.extraction._ipac_table``).
 - ``Help:Pronunciation respelling key`` — respell <-> IPA correspondence.
 
 ``{{IPAc-en}}`` spells a word as diaphoneme codes (optionally X-SAMPA shorthand
@@ -13,7 +13,7 @@ by ``|``; Wikipedia renders hyphens between them and marks stress with capitals.
 
 from __future__ import annotations
 
-from lexphon.extraction._ipac_table import IPAC_EN_TO_IPA  # noqa: F401
+from edgepron.extraction._ipac_table import IPAC_EN_TO_IPA  # noqa: F401
 
 # The first positional argument of {{IPAc-en}} can be a pronunciation *label*
 # (``lang``, ``us``, ``also``, ...) rather than a phoneme.

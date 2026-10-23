@@ -6,7 +6,7 @@ this project is versioned, built, and committed.
 
 ## Project facts
 
-- **Repository:** `https://github.com/xenotropic/lexphon`
+- **Repository:** `https://github.com/xenotropic/edgepron`
 - **Default branch:** `main`
 - **Language/framework:** Python, SQLite
 - **License:** MIT © 2026 Joseph Morris
@@ -42,7 +42,7 @@ All agent output (summaries, status reports, ticket notes, commit messages, and 
      fine-grained PAT; it is not echoed), then caches it:
 
      ```bash
-     cd /workspaces/edge-lexphon && env -u GIT_ASKPASS GIT_CONFIG_NOSYSTEM=1 git push --dry-run origin main
+     cd /workspaces/edgepron && env -u GIT_ASKPASS GIT_CONFIG_NOSYSTEM=1 git push --dry-run origin main
      ```
 
      (`env -u GIT_ASKPASS` forces git's inline terminal prompt rather than VS

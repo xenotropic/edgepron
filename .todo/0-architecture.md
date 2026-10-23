@@ -1,4 +1,4 @@
-# Lexphon — Phased Architecture
+# Edgepron — Phased Architecture
 
 > Living design document. The original Gemini-generated draft this supersedes
 > is preserved verbatim in git history (commit `a05b24f`, the initial import).
@@ -70,8 +70,8 @@ limit 1–10000; minimum monthly pageviews to filter bot spikes).
 ### 3.4 Package layout
 
 ```
-lexphon/
-├── cli.py               # python -m lexphon.cli
+edgepron/
+├── cli.py               # python -m edgepron.cli
 ├── config.yaml          # all tunables (depth, limits, API, storage)
 ├── discovery/
 │   ├── popular.py       # top-pageviews discovery
@@ -90,10 +90,10 @@ lexphon/
 
 ```bash
 # smoke test: 1 vital + 1 popular article
-python -m lexphon.cli --mode api --vital-level 1 --popular-limit 1 --sqlite dist/test_pronunc.db
+python -m edgepron.cli --mode api --vital-level 1 --popular-limit 1 --sqlite dist/test_pronunc.db
 
 # production: vital level 4 + top 5000 viewed
-python -m lexphon.cli --mode api --vital-level 4 --popular-limit 5000 --popularity-timeframe last-month --sqlite dist/production_pronunc.db
+python -m edgepron.cli --mode api --vital-level 4 --popular-limit 5000 --popularity-timeframe last-month --sqlite dist/production_pronunc.db
 ```
 
 (Phase 1 also permits a `--mode toolforge` path hitting MariaDB replicas / a

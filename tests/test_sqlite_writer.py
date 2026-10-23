@@ -2,8 +2,8 @@
 
 import sqlite3
 
-from lexphon.model import Entry
-from lexphon.storage.sqlite_writer import write_sqlite
+from edgepron.model import Entry
+from edgepron.storage.sqlite_writer import write_sqlite
 
 
 def _rows(path):

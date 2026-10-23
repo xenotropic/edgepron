@@ -1,5 +1,5 @@
 {
-  "name": "Edge Lexphon Sandbox",
+  "name": "Edgepron Sandbox",
   "build": {
     "dockerfile": "Dockerfile"
   },

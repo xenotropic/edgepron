@@ -2,8 +2,8 @@
 
 import gzip
 
-from lexphon.model import Entry
-from lexphon.storage.tsv_writer import write_condensed, write_tsv
+from edgepron.model import Entry
+from edgepron.storage.tsv_writer import write_condensed, write_tsv
 
 ENTRIES = [
     Entry(word="Istanbul", ipa="ˌɪstænˈbʊl", respell="IST-an-BUUL"),

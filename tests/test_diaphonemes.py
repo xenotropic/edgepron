@@ -1,6 +1,6 @@
 """Diaphoneme normalization and IPA <-> respell conversion tests."""
 
-from lexphon.extraction import diaphonemes
+from edgepron.extraction import diaphonemes
 
 
 def test_ipa_to_respell_zeus():

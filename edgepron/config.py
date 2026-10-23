@@ -12,7 +12,7 @@ import yaml
 class Config:
     base_url: str = "https://en.wikipedia.org/w/api.php"
     rest_base_url: str = "https://wikimedia.org/api/rest_v1"
-    user_agent: str = "lexphon/0.1 (https://github.com/xenotropic/lexphon)"
+    user_agent: str = "edgepron/0.1 (https://github.com/xenotropic/edgepron)"
     api_chunk_size: int = 50
     rate_limit_sleep: float = 0.0
     timeout: int = 30

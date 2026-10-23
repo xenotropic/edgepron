@@ -22,14 +22,14 @@ in-memory PAT cache is warm so pushes/pulls don't re-prompt mid-task:
 2. Probe auth WITHOUT hanging (this is a non-interactive shell: do not let git
    fall back to VS Code's askpass, and disable terminal prompts):
 
-       cd /workspaces/edge-lexphon && env -u GIT_ASKPASS GIT_TERMINAL_PROMPT=0 GIT_CONFIG_NOSYSTEM=1 timeout 20 git push --dry-run origin HEAD
+       cd /workspaces/edgepron && env -u GIT_ASKPASS GIT_TERMINAL_PROMPT=0 GIT_CONFIG_NOSYSTEM=1 timeout 20 git push --dry-run origin HEAD
 
    - `Everything up-to-date` (exit 0) → PAT already cached; proceed with git work.
    - `fatal: could not read Username ...` (exit 128) → cache is empty. You CANNOT
      prompt the user from a non-interactive shell (it would hang), so STOP and ask
      them (in chat) to run this in their VS Code terminal, then paste username + PAT:
 
-       cd /workspaces/edge-lexphon && env -u GIT_ASKPASS GIT_CONFIG_NOSYSTEM=1 git push --dry-run origin main
+       cd /workspaces/edgepron && env -u GIT_ASKPASS GIT_CONFIG_NOSYSTEM=1 git push --dry-run origin main
 
      That push connects and authenticates (it never updates refs), so it prompts
      once and caches the PAT. Resume git work only after the user confirms — do not

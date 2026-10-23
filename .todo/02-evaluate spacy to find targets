@@ -16,7 +16,7 @@ proper_nouns = [ent.text for ent in doc.ents if ent.label_ in ("PERSON", "GPE", 
 ==Status Report: 2026-10-19 10:04 PDT==
 Feasibility: HIGH — architectural note only, no code written this pass.
 
-This is a *discovery* feature, so it belongs in lexphon/discovery/ as a third
+This is a *discovery* feature, so it belongs in edgepron/discovery/ as a third
 source alongside vital.py and popular.py — e.g. discovery/corpus_ner.py exposing
 a function that returns a list[str] of candidate titles. Those candidates then
 flow through the existing dedupe() -> fetch_leads() -> extract_pronunciations()

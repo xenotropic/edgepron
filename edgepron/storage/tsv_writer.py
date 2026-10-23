@@ -6,7 +6,7 @@ import gzip
 import os
 from collections.abc import Iterable
 
-from lexphon.model import Entry
+from edgepron.model import Entry
 
 _HEADER = ["word", "ipa", "respell", "ipa_derived", "respell_derived", "source"]
 

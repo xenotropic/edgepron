@@ -1,6 +1,6 @@
 """Parser tests using real lead-section templates from en.wikipedia.org."""
 
-from lexphon.extraction.parser import extract_pronunciations
+from edgepron.extraction.parser import extract_pronunciations
 
 ISTANBUL = (
     "{{IPAc-en|lang|ˌ|ɪ|s|t|æ|n|ˈ|b|ʊ|l"

@@ -1,7 +1,7 @@
 """Discovery tests (vital-article parsing and dedupe)."""
 
-from lexphon.discovery.intersection import dedupe, normalize_title
-from lexphon.discovery.vital import _is_mainspace, fetch_vital_titles
+from edgepron.discovery.intersection import dedupe, normalize_title
+from edgepron.discovery.vital import _is_mainspace, fetch_vital_titles
 
 
 class _FakeResponse:

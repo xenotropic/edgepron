@@ -1,4 +1,4 @@
-"""Shared data model for the lexphon pipeline."""
+"""Shared data model for the edgepron pipeline."""
 
 from __future__ import annotations
 

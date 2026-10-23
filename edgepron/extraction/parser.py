@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import mwparserfromhell
 
-from lexphon.extraction import diaphonemes
+from edgepron.extraction import diaphonemes
 
 
 @dataclass
