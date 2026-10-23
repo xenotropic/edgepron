@@ -77,3 +77,41 @@ Integration & policy decisions:
 Difficulty ~4 (the Unicode/NFD tokenizer + syllabifier are the only fiddly parts;
 the test corpus makes parity checkable). Suggest doing this ticket first, then
 ticket 3 consumes it. 
+==reply==
+Agree in all respects. one thing that seems implied in what you're saying, but want to make clear is to try to keep this isolated within my code base. Not so much for IP purposes, because it's all MIT, but for (1) maintenance and (2) re-use purposes. for (1) we can see that Attactive is working on this and probably adding on new pronunciations and improvements. And also for (2), somebody else might want to reuse in its Python form. So just bear that in mind that we want to keep it updatable and separable as much as possible (not strict, and obvs you'll be calling into it). It seems like the functionality is sufficiently isolated that hopefully that won't be an issue.
+Also, sort of an implied decision / request is that the two column table should become the default, with IPA converted to respell. But the current functionality (three or four columns, I forget) could be callable via an option from the command line if somebody wants to get only the original phonetic (IPA/respell) source, no conversions.   
+
+==Status Report: 2026-10-23==
+Port complete and green. Delivered an isolated, separable edgepron/respell/
+package exposing ipa_to_canonical_respell(ipa) -> str:
+
+  edgepron/respell/mappings.py    # IpaSymbol table + phonemeChunks + ignoredSymbols
+  edgepron/respell/parser.py      # NFD tokenizer (same consumer priority order)
+  edgepron/respell/syllabifier.py # maximal-onset boundary inference
+  edgepron/respell/converter.py   # token -> respelling assembly
+  edgepron/respell/__init__.py    # public API: ipa_to_canonical_respell
+
+Each module carries an MIT attribution header ("Portions copyright 2023
+Attacktive") and records the pinned upstream commit
+69d9f60179710d98dbd4170bf02c9556449be717 (clone re-synced from 82cc029; the 3
+intervening commits were CI-only dependency bumps, no source changes).
+
+Tests: tests/test_respell.py ports the upstream acceptance corpus — the full
+scheme-conformance.test.ts (26 conformance + 5 unsupported) and
+converter.test.ts (~50 cases) plus parser structural cases and error-path
+checks, as pytest parametrized tests. 137 tests, all green (full suite: 160
+passed).
+
+Smoke test over real extracted IPA (24 article leads, network): 15/21 IPA-only
+conversions succeeded; the 6 failures were all the same caller issue — the
+extraction layer concatenates multi-pronunciation variants and their separators
+into one string (`,` alternates, `_` between words), e.g. 'ˈkiːnwɑː,_kiˈnoʊə'.
+Those are not genuine IPA phonemes, so the canonical converter correctly rejects
+them. On this sample there were zero rejections of genuinely unsupported
+English-inventory symbols. For ticket 3: split alternates on `,` (map `_` to a
+word boundary) before conversion, then fall back to
+diaphonemes.ipa_to_respell() only when the canonical port raises.
+
+Deferred to ticket 3 (unchanged): wiring the fallback policy + respell_method
+provenance into cli.py/_build_entry. The port itself is unwired and reusable in
+isolation.
