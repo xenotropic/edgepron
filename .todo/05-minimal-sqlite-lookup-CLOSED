@@ -1,0 +1,35 @@
+==Original Issue==
+Title: minimal two-column SQLite lookup for deployment.
+
+The SQLite writer currently emits only the full 7-column development schema
+(word, ipa, respell, ipa_derived, respell_derived, respell_method, source).
+For deployment — an Android/Kotlin text normalizer producing TTS-readable text
+— we want a minimal, read-optimized lookup database of key -> value where key is
+the source word and value is the phonetic pronunciation.
+
+Decisions (from discussion):
+- Keys lowercased, preserving accents (Python str.lower() keeps diacritics).
+- Value form defaults to rescale (respell); an optional ipa mode emits the
+  best-available IPA (native {{IPAc-en}} preferred, else derived via the existing
+  diaphonemes.respell_to_ipa heuristic). IPA is optional, never the default,
+  because respell->IPA is lossy.
+- CLI flag: --sqlite-minimal PATH, reusing --condensed-phonetic {respell,ipa} to
+  switch the value column.
+- Schema: CREATE TABLE pronunciations (word TEXT PRIMARY KEY, phonetic TEXT)
+  WITHOUT ROWID; identical low-memory PRAGMAs to write_sqlite.
+- Rows whose chosen form is missing are skipped (same policy as write_condensed).
+
+Difficulty ~1.
+==Status Report: 2026-10-23==
+Done. Added edgepron.storage.sqlite_writer.write_sqlite_lookup(entries, path,
+phonetic="respell", lowercase=True, low_memory=True):
+- two-column `pronunciations (word TEXT PRIMARY KEY, phonetic TEXT) WITHOUT ROWID`
+  with the same low-memory PRAGMAs as write_sqlite;
+- keys lowercased via str.lower() (accents preserved);
+- value defaults to respell, `ipa` optional;
+- skips rows whose chosen form is missing; returns rows written.
+
+CLI: new `--sqlite-minimal PATH` flag reusing `--condensed-phonetic {respell,ipa}`
+for the value column. Full `--sqlite` (7-column) unchanged. README updated.
+Tests: 3 new in tests/test_sqlite_writer.py (lowercase+accents, ipa+skip,
+WITHOUT ROWID). Full suite: 169 passed.

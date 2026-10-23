@@ -1,10 +1,11 @@
-Next open ticket: 5
+Next open ticket: 6
 
 ## Open
 02-evaluate spacy to find targets (Cline Difficulty Rating: 4)
 0-architecture (Cline Difficulty Rating: 1)
 
 ## Closed
+05-minimal-sqlite-lookup-CLOSED
 04-ipa-to-pronunciation-respelling-CLOSED
 03-respell-as-default-output-CLOSED
 1-phase-1-wikipedia-lead-extractor-CLOSED

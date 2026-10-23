@@ -37,6 +37,9 @@ Output formats (all opt-in):
 
 - `--sqlite PATH` — full `WITHOUT ROWID` SQLite
   (`word, ipa, respell, ipa_derived, respell_derived, respell_method, source`).
+- `--sqlite-minimal PATH` — deployment two-column `word -> phonetic` SQLite
+  (keys lowercased, accents preserved; respell by default, `--condensed-phonetic
+  ipa` to switch).
 - `--tsv PATH` / `--tsv-gz PATH` — the same seven columns, plain or gzip.
 - `--condensed PATH` — two-column `word <TAB> phonetic` lookup (respell by
   default; `--condensed-phonetic ipa` to switch; `.gz` suffix compresses).

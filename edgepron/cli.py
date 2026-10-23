@@ -4,6 +4,7 @@ Builds a pronunciation dictionary from English Wikipedia lead sections.
 All output types are opt-in via flags:
 
 - ``--sqlite PATH``         full ``WITHOUT ROWID`` SQLite DB
+- ``--sqlite-minimal PATH`` two-column ``word -> phonetic`` SQLite lookup
 - ``--tsv PATH``            full seven-column TSV (uncompressed)
 - ``--tsv-gz PATH``         full seven-column TSV (gzip-compressed)
 - ``--condensed PATH``      two-column ``word <TAB> phonetic`` lookup
@@ -30,7 +31,7 @@ from edgepron.discovery import dedupe, fetch_top_pageviews, fetch_vital_titles
 from edgepron.extraction import diaphonemes, extract_pronunciations, fetch_leads
 from edgepron.model import Entry
 from edgepron.respell import ipa_to_canonical_respell
-from edgepron.storage import write_condensed, write_sqlite, write_tsv
+from edgepron.storage import write_condensed, write_sqlite, write_sqlite_lookup, write_tsv
 
 
 def _default_config_path() -> str:
@@ -57,6 +58,8 @@ def build_parser() -> argparse.ArgumentParser:
                            help="comma-separated explicit titles to fetch")
     output = parser.add_argument_group("output (at least one required)")
     output.add_argument("--sqlite", default=None)
+    output.add_argument("--sqlite-minimal", default=None,
+                        help="minimal two-column `word -> phonetic` SQLite lookup")
     output.add_argument("--tsv", default=None)
     output.add_argument("--tsv-gz", default=None)
     output.add_argument("--condensed", default=None)
@@ -72,7 +75,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
-    outputs = [o for o in (args.sqlite, args.tsv, args.tsv_gz, args.condensed) if o]
+    outputs = [o for o in (args.sqlite, args.sqlite_minimal, args.tsv, args.tsv_gz, args.condensed) if o]
 
     if args.mode == "toolforge":
         print("error: --mode toolforge is not implemented in phase 1; use --mode api", file=sys.stderr)
@@ -126,6 +129,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.sqlite:
         write_sqlite(entries, args.sqlite, low_memory=cfg.low_memory)
         print(f"wrote {len(entries)} rows -> {args.sqlite}", file=sys.stderr)
+    if args.sqlite_minimal:
+        phonetic = args.condensed_phonetic or "respell"
+        n = write_sqlite_lookup(entries, args.sqlite_minimal, phonetic=phonetic,
+                                low_memory=cfg.low_memory)
+        print(f"wrote {n} rows -> {args.sqlite_minimal}", file=sys.stderr)
     if args.tsv:
         write_tsv(entries, args.tsv)
         print(f"wrote {len(entries)} rows -> {args.tsv}", file=sys.stderr)
