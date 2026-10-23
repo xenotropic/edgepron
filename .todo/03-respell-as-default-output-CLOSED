@@ -41,3 +41,25 @@ but should be documented in the output spec, and possibly normalized later.
 
 Difficulty ~2. No schema changes; a handful of lines in cli.py plus the two
 decisions above.
+==reply==
+1 - stdout
+2 - will go with recommend; low importance to me; personally my only intent to consume is human testing of tsv (doesn't matter) and machine reading of sqlite (android/kotlin)
+==Status Report: 2026-10-23==
+Done. cli.py now defaults (no output flag) to writing the two-column
+`word<TAB>respell` lookup to stdout, headerless; the explicit `--condensed PATH`
+path keeps its `word\tphonetic` header. `--condensed-phonetic ipa` still switches
+the value column.
+
+The IPA->respell fallback in _build_entry now uses the ticket-4 port first:
+multi-pronunciation alternates are split on `,` (first variant wins) and `_`
+word separators map to spaces, then ipa_to_canonical_respell() runs; only on a
+ValueError does it fall back to the legacy diaphonemes.ipa_to_respell() heuristic.
+
+Provenance: Entry gained a respell_method field (None for native, "canonical" or
+"heuristic" for derived), persisted as a new column in the SQLite schema and the
+full TSV header. This is a schema change beyond the original "no schema changes"
+note — it was the deferred `respell_method` provenance from ticket 4.
+
+Tests: tests/test_cli.py (native/canonical/alternate/heuristic/skip) plus
+condensed-stdout coverage; schema+header assertions updated for the new column.
+Full suite: 166 passed. 

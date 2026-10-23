@@ -9,8 +9,9 @@ from edgepron.storage.sqlite_writer import write_sqlite
 def _rows(path):
     conn = sqlite3.connect(path)
     try:
-        return conn.execute("SELECT word, ipa, respell, ipa_derived, respell_derived, source "
-                            "FROM pronunciations ORDER BY word").fetchall()
+        return conn.execute(
+            "SELECT word, ipa, respell, ipa_derived, respell_derived, respell_method, source "
+            "FROM pronunciations ORDER BY word").fetchall()
     finally:
         conn.close()
 
@@ -19,15 +20,16 @@ def test_write_and_readback(tmp_path):
     path = str(tmp_path / "out.db")
     entries = [
         Entry(word="Istanbul", ipa="ˌɪstænˈbʊl", respell="IST-an-BUUL"),
-        Entry(word="Zeus", ipa="zjuːs", respell="zy-oos", respell_derived=True),
+        Entry(word="Zeus", ipa="zjuːs", respell="zy-oos", respell_derived=True,
+              respell_method="canonical"),
     ]
     written = write_sqlite(entries, path)
     assert written == 2
 
     rows = _rows(path)
     assert rows == [
-        ("Istanbul", "ˌɪstænˈbʊl", "IST-an-BUUL", 0, 0, "wikipedia"),
-        ("Zeus", "zjuːs", "zy-oos", 0, 1, "wikipedia"),
+        ("Istanbul", "ˌɪstænˈbʊl", "IST-an-BUUL", 0, 0, None, "wikipedia"),
+        ("Zeus", "zjuːs", "zy-oos", 0, 1, "canonical", "wikipedia"),
     ]
 
 

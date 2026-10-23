@@ -36,10 +36,15 @@ python -m edgepron.cli --vital-level 4 --popular-limit 5000 \
 Output formats (all opt-in):
 
 - `--sqlite PATH` — full `WITHOUT ROWID` SQLite
-  (`word, ipa, respell, ipa_derived, respell_derived, source`).
-- `--tsv PATH` / `--tsv-gz PATH` — the same six columns, plain or gzip.
+  (`word, ipa, respell, ipa_derived, respell_derived, respell_method, source`).
+- `--tsv PATH` / `--tsv-gz PATH` — the same seven columns, plain or gzip.
 - `--condensed PATH` — two-column `word <TAB> phonetic` lookup (respell by
   default; `--condensed-phonetic ipa` to switch; `.gz` suffix compresses).
+
+With no output flag the two-column `word <TAB> respell` lookup is written to
+stdout **without** a header (data only), which is the default for quick testing.
+`respell_method` records how a derived respelling was produced: `canonical`
+(ticket-4 converter) or `heuristic` (legacy fallback).
 
 ## License
 

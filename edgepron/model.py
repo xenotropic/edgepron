@@ -21,4 +21,7 @@ class Entry:
     respell: str | None = None
     ipa_derived: bool = False
     respell_derived: bool = False
+    # Provenance of a *derived* respelling: "canonical" (ticket-4 port) or
+    # "heuristic" (legacy diaphonemes.ipa_to_respell fallback).
+    respell_method: str | None = None
     source: str = SOURCE_WIKIPEDIA

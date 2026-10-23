@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS pronunciations (
     respell         TEXT,
     ipa_derived     INTEGER NOT NULL DEFAULT 0,
     respell_derived INTEGER NOT NULL DEFAULT 0,
+    respell_method  TEXT,
     source          TEXT NOT NULL DEFAULT 'wikipedia'
 ) WITHOUT ROWID;
 """
@@ -33,10 +34,11 @@ def write_sqlite(entries: Iterable[Entry], path: str, low_memory: bool = True) -
         conn.execute(_SCHEMA)
         conn.executemany(
             "INSERT OR REPLACE INTO pronunciations "
-            "(word, ipa, respell, ipa_derived, respell_derived, source) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
+            "(word, ipa, respell, ipa_derived, respell_derived, respell_method, source) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
-                (e.word, e.ipa, e.respell, int(e.ipa_derived), int(e.respell_derived), e.source)
+                (e.word, e.ipa, e.respell, int(e.ipa_derived), int(e.respell_derived),
+                 e.respell_method, e.source)
                 for e in entries
             ),
         )

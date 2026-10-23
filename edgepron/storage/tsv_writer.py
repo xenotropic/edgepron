@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import gzip
 import os
+import sys
 from collections.abc import Iterable
 
 from edgepron.model import Entry
 
-_HEADER = ["word", "ipa", "respell", "ipa_derived", "respell_derived", "source"]
+_HEADER = ["word", "ipa", "respell", "ipa_derived", "respell_derived", "respell_method", "source"]
 
 
 def _row(entry: Entry) -> list[str]:
@@ -18,6 +19,7 @@ def _row(entry: Entry) -> list[str]:
         entry.respell or "",
         "1" if entry.ipa_derived else "0",
         "1" if entry.respell_derived else "0",
+        entry.respell_method or "",
         entry.source,
     ]
 
@@ -46,19 +48,31 @@ def write_tsv_gz(entries: Iterable[Entry], path: str) -> int:
     return write_tsv(entries, path)
 
 
-def write_condensed(entries: Iterable[Entry], path: str, phonetic: str = "respell") -> int:
+def write_condensed(entries: Iterable[Entry], path: str, phonetic: str = "respell",
+                    header: bool = True) -> int:
     """Write a two-column ``word <TAB> phonetic`` lookup.
 
     ``phonetic`` selects the preferred form (``respell`` or ``ipa``); rows whose
     chosen form is missing are skipped. ``.gz`` suffix compresses the output.
+    ``path == "-"`` writes to stdout; set ``header=False`` for data-only stdout.
     """
     entries = list(entries)
     written = 0
-    with _open(path, gz=path.endswith(".gz")) as fh:
-        fh.write("word\tphonetic\n")
+
+    def emit(fh) -> None:
+        nonlocal written
+        if header:
+            fh.write("word\tphonetic\n")
         for entry in entries:
             value = entry.respell if phonetic == "respell" else entry.ipa
             if value:
                 fh.write(f"{entry.word}\t{value}\n")
                 written += 1
+
+    if path == "-":
+        emit(sys.stdout)
+        return written
+
+    with _open(path, gz=path.endswith(".gz")) as fh:
+        emit(fh)
     return written
