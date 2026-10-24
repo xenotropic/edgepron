@@ -58,7 +58,12 @@ def fetch_vital_titles(
     max_retries: int = 3,
     rate_limit_sleep: float = 0.0,
 ) -> list[str]:
-    """Return the article titles in the given vital-articles level."""
+    """Return the article titles in the given vital-articles level.
+
+    Each level is a strict superset of the previous one (Level 4 ⊇ Level 3 ⊇
+    Level 2 ⊇ Level 1), so requesting a higher level already includes every
+    lower level's titles.
+    """
     root = f"Wikipedia:Vital articles/Level {level}"
     titles: list[str] = []
     visited: set[str] = set()
