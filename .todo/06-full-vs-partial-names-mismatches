@@ -1,0 +1,25 @@
+I've run a test:
+python -m edgepron.cli --vital-level 4 --popular-limit 500 --condensed output-v4-p500-oct24-938am.tsv
+that output is in the resources directory. 
+I think what we'll be doing over several tickets is trying to get this to be cleaner. The good news is it has discovered a lot of names and they look like they mostly are related to each other. 
+This particular ticket is about the issue that seems to occur the most: The pronunciation often only matches part of the word. So, you know, example at the very top of the file, Vivian Leigh. Just as a pronunciation, Lee. It's only for her last name. Pieter Bruegel the Elder just has BROY-gəl. 
+I don't even know if the information exists in the articles in order to be able to determine this. This is just, I think, a planning ticket for right now to see what information exists. Can you investigate methods to ensure that the scope of the name matches up with the scope of the pronunciation?
+
+## Investigation notes (agent)
+Live check confirms the article itself scopes the template to only the
+"hard" part of a name: "Vivien Leigh"'s lead has just `{{respell|LEE}}`
+(surname only — "Vivien" is obvious), "Pieter Bruegel the Elder" gives only
+`BROY-gəl`, "Humphrey Bogart" only `BOH-gart`. Editors choose per-name how much
+to transcribe, and that scope is not encoded anywhere on the page — it is
+human judgment visible only by reading the prose. There is no deterministic
+marker ("this template covers 2 of 3 name tokens") to match against.
+
+## ==Status Report: 2026-10-24 18:00 US/Pacific==
+The scope data does NOT exist reliably in the articles. The pronunciation is
+attached by proximity to whichever name part an editor deemed worth
+transcribing, and often only the non-obvious part is transcribed. Matching
+name-scope to pronunciation-scope deterministically appears impossible; it
+would require reading the prose (an LLM/NLP pass). Whether the *correct*
+behavior is to expand (synthesize the obvious parts) or to accept scoped
+entries is a product decision left for human review. Candidate for the
+post-extraction cleanup pass rather than a mechanical fix. 

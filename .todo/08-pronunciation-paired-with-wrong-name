@@ -1,0 +1,42 @@
+# Pronunciation paired with the wrong name (birth/legal/alternate name)
+
+## ==Original Issue==
+
+Discovery titles (from the Vital-Articles list) often don't match the phrase
+whose pronunciation the article's *first* `{{IPAc-en}}`/`{{respell}}` template
+transcribes. The extractor grabs the first template it finds in the lead, but
+that first template is frequently attached to a *different name in the lead*
+(birth name, legal name, alternate spelling, a synonym), not the article title.
+
+### Concrete examples (from resources/output-v4-p500-oct24-938am.tsv)
+
+- `Stevie Wonder`  -> `STEEV-lənd`  (birth name "Stevland")
+- `Stan Lee`       -> `ˈliːbər`     (birth surname "Lieber")
+- `Madonna`        -> `Ciccone`     (birth surname Ciccone)
+- `Uluru`          -> `Ayers`       (colonial name Ayers Rock)
+- `Puncak Jaya`    -> `Carstensz`   (former colonial name)
+- `Checkers`       -> `draughts`    (British synonym)
+- `Desertion`      -> `AWOL`        (abbreviation treated as the pronunciation target)
+
+These look *plausible* but pair the title with a pronunciation for a different
+word/name, so the dictionary entry is wrong.
+
+## Investigation notes (agent, kept for context)
+
+Checked live leads: the "Stevie Wonder" lead's first template transcribes
+"Stevland" (legal name `Stevland Hardaway Morris`, born `Stevland Hardaway
+Judkins`); the stage name "Stevie Wonder" has no template in the lead at all.
+"Stan Lee" similarly puts `{{IPAc-en|ˈliːbər}}` next to the birth name
+"Lieber". So the *scope* information (which name an editor's template
+describes) is not a machine-readable datum on the page; it's signaled only by
+proximity in prose and by human knowledge.
+
+## ==Status Report: 2026-10-24 18:00 US/Pacific==
+
+Investigated whether the target name can be recovered deterministically. It
+cannot in general: the lead is free prose, the bolded `'''...'''` name may itself
+be the birth/legal name rather than the stage/common title, and the title's own
+pronunciation may be absent from the lead title. A robust fix would require
+understanding which word each template attaches to (proximity + dialogue about
+name types), i.e. an NLP/LLM pass — not a mechanical rule. Left for human
+review; likely a candidate for the post-extraction LLM cleanup idea.

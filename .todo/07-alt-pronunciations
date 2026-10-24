@@ -1,0 +1,33 @@
+# Alternate pronunciations (multiple variants) not collapsed
+
+## ==Original Issue==
+
+I've run a test:
+python -m edgepron.cli --vital-level 4 --popular-limit 500 --condensed output-v4-p500-oct24-938am.tsv
+that output is in the resources directory.
+Many of the pronunciations have alternate versions, separated by commas. My
+presumptive solution: truncate at the first comma and keep only the first
+variant. For the condensed lookup we want exactly ONE pairing per headword.
+
+### Concrete examples
+- `Marcello Mastroianni` -> `mar-CHEL-oh-_-MA(H)ST-roh-YA(H)N-ee-,_-_-MA(H)ST-roy-AH-nee`
+- `Michelangelo`          -> alternates separated by `,_`
+- `Vladimir Nabokov`      -> alternates
+- `Kurt Lewin`            -> alternates
+
+## Investigation notes (agent)
+The alternates live in the *native* `{{respell}}` output. `normalize_respell`
+joins syllables with `-`, and a template param like `,_-_` becomes the literal
+`,`, so the comma survives into the final string. The IPA-derived path already
+truncates at the first comma (see `_ipa_to_respell`: `ipa.replace("_","
+").split(",")[0]`), but the native-respell path does NOT — that asymmetry is
+the bug.
+
+## ==Status Report: 2026-10-24 18:10 US/Pacific==
+
+Implemented. `normalize_respell` now splits the joined syllable string at the
+first `,` and strips trailing `_`/`-`/whitespace, so only the first variant is
+kept (the IPA-derived path already truncated at the comma in `_ipa_to_respell`).
+Live-checked against the real "Marcello Mastroianni" lead:
+`mar-CHEL-oh-_-MA(H)ST-roh-YA(H)N-ee` (alternates dropped). Added
+`test_respell_alternates_are_truncated_at_comma`. Full suite: 174 passed.

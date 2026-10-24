@@ -1,0 +1,36 @@
+# Scientific name transcribed instead of the common name
+
+## ==Original Issue==
+
+For biology (and some geography/taxonomy) article titles, the title is the
+*common* name (`Beetle`, `Bear`, `Owl`, `Moss`, `Pine`, `Rodent`), but the lead's
+first `{{IPAc-en}}`/`{{respell}}` template transcribes the *scientific*
+(Latin) name that appears in parentheses next to it. The output therefore
+pairs the common headword with the scientific name's pronunciation.
+
+### Concrete examples
+
+- `Beetle`    -> `koh-LEE-qp-tər-ə`  (order "Coleoptera")
+- `Bear`      -> (family "Ursidae")
+- `Owl`       -> (order "Strigiformes")
+- `Moss`      -> (division "Bryophyta")
+- `Pine`      -> (genus "Pinus")
+- `Rodent`    -> (order "Rodentia")
+
+## Investigation notes (agent)
+
+Confirmed on "Beetle": lead says `...form the order Coleoptera
+(/koʊliːˈɒptərə/)...`. The only IPA in the lead is for the scientific order; the
+common word "beetle" itself is a plain English word and has no template. This is
+the same root cause as the "wrong name" ticket: the first pronunciation
+template in the lead is not necessarily scoped to the article title.
+
+## ==Status Report: 2026-10-24 18:00 US/Pacific==
+
+The scientific name is introduced by an editorial convention (italicized Latin
+name in parentheses), so a lexical/syntactic rule ("skip a template whose
+immediately preceding text is an italicized name") is *possible* but fragile and
+would still miss the fact that the common name often has no transcription at
+all. Deterministic fix not reliable. Left for human review; good candidate for
+an LLM cleanup pass or for explicitly emitting the scientific name as a separate
+entry rather than substituting.

@@ -1,0 +1,38 @@
+# Mechanical artifacts in extracted phonetics
+
+## ==Original Issue==
+
+Some extracted phonetics contain obvious mechanical junk: embedded HTML
+comments, stray quote characters, truncation against source breaks, and
+literal-prose fragments instead of phonetics. These are the most deterministic
+of the five classes and should be cleaned by character-level rules.
+
+### Concrete examples
+
+- `Melbourne`             -> phonetic contains a raw `<!-- ... -->` HTML comment
+- `Bangladesh`            -> stray `"` quote character in the phonetic
+- `Osprey`                -> stray `"` quote character
+- `Donetsk`               -> truncated (`dən`)
+- `Eigenvalues & eigen-vec…` -> truncated (`eigen-`), plus full-width ellipsis
+- `Guelphs and Ghibellines` -> phonetic contains a literal `…` (ellipsis) instead of "and"
+
+## ==Status Report: 2026-10-24 18:10 US/Pacific==
+
+Implemented the deterministic pieces:
+
+1. `normalize_ipac_en` / `normalize_respell` strip inline HTML comments
+   (`<!-- ... -->`) from param values via a shared `_strip_comment` helper.
+2. `_ipac_table.py` gained `'"': 'ˈ'` so the legacy double-quote primary-stress
+   code is mapped (it was leaking through literally as a stray quote).
+3. `normalize_respell` rstrip handles dangling `-`/`_`.
+
+Live-verified: Melbourne -> `MEL-bərn` (comment gone), Bangladesh ->
+`ˌbæŋɡləˈdɛʃ` (no stray quote), Osprey -> `ˈɒspri`. Added
+`test_respell_html_comment_is_stripped` and
+`test_ipac_en_legacy_double_quote_is_primary_stress`. Suite: 174 passed.
+
+NOT fixed (left for human review, out of mechanical scope): the `...` ellipsis
+in multi-name titles (e.g. "Guelphs and Ghibellines") and dangling `-` forms
+that are really *partial-name* transcriptions (e.g. "Eigenvalues…" -> "EYE-gən",
+"Donetsk" -> "dən") — those belong to ticket 06 (partial names), not to
+mechanical cleanup.
