@@ -13,6 +13,8 @@ by ``|``; Wikipedia renders hyphens between them and marks stress with capitals.
 
 from __future__ import annotations
 
+import re
+
 from edgepron.extraction._ipac_table import IPAC_EN_TO_IPA  # noqa: F401
 
 # The first positional argument of {{IPAc-en}} can be a pronunciation *label*
@@ -94,6 +96,12 @@ RESPELL_TO_IPA = {
     "z": "z", "zy": "zj", "zh": "ʒ",
 }
 
+def _strip_comment(value: str) -> str:
+    """Remove an inline HTML comment (``<!-- ... -->``) glued onto a template
+    parameter value and trim surrounding whitespace."""
+    return re.sub(r"<!--.*?-->", "", value).strip()
+
+
 def normalize_ipac_en(params) -> str | None:
     """Turn ``{{IPAc-en}}`` template params into a canonical IPA string."""
     out: list[str] = []
@@ -101,7 +109,7 @@ def normalize_ipac_en(params) -> str | None:
         name = str(getattr(p, "name", "")).strip()
         if name and not name.isdigit():
             continue  # named params (audio=..., lang=...)
-        value = str(getattr(p, "value", "")).strip()
+        value = _strip_comment(str(getattr(p, "value", "")).strip())
         if not value:
             continue
         if value.lower() in LABEL_CODES:
@@ -115,16 +123,23 @@ def normalize_ipac_en(params) -> str | None:
 
 
 def normalize_respell(params) -> str | None:
-    """Turn ``{{respell}}`` template params into ``SYL-la-ble`` form."""
+    """Turn ``{{respell}}`` template params into ``SYL-la-ble`` form.
+
+    A comma introduces an alternate pronunciation; only the first variant is
+    kept for a single canonical pairing.
+    """
     syllables: list[str] = []
     for p in params:
         name = str(getattr(p, "name", "")).strip()
         if name and not name.isdigit():
             continue
-        value = str(getattr(p, "value", "")).strip()
+        value = _strip_comment(str(getattr(p, "value", "")).strip())
         if value:
             syllables.append(value)
-    return "-".join(syllables) if syllables else None
+    if not syllables:
+        return None
+    first = "-".join(syllables).split(",")[0].rstrip("-_ \t").strip()
+    return first or None
 
 
 def _tokenize_ipa(ipa: str) -> list[str]:
