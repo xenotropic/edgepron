@@ -1,6 +1,28 @@
 I am a little bit daunted by the problems of extracting the data directly from Wikipedia. I think I'm inclined to shift towards a process of discovery on Wikipedia text, the exact process. I think we're probably sort of on the right path towards discovering the right words. Might add in spacy later to find more, but Wikipedia itself is not a very good source for pronunciations, it seems like, or at least of normalized, regularized data that can correlate. So I want to try to use what we're finding in Wikipedia. Tokenize it down to words rather than phrases (although we'll lose some things because maybe some people say their name in a special way, but I don't know. Gotta pick your battles) and then look up those for pronunciations in Wiktionary. Can you evaluate that as a plan and write out your plan as as reply in this ticket. This is meant as a way to get around all of the problems in ticket 6, 7, eight and nine and 10. And I think also maybe included that plan some version management stuff. I think if we're going to go down this way, it's kind of a pretty big refactoring, so we'll probably tag somehow, I guess, V.1 so that we can revert if the Wiktionary path doesn't seem that good. Consider also in your planning whether we need to download one big Wiktionary blob from kaikki.org (which is acceptable because this is meant to be an offline tool run as a pipeline to create the database as an artifact for the edge) versus hitting Wiktionary API and see if it has published rate limits (API is a preferable dependency because it's easier for me, but it might not be something Wikipedia wants or allows).
 
-==Reply (agent plan) — 2026-10-24 22:45 US/Pacific==
+==Resolution (human + agent, 2026-10-24)==
+
+- **Phrase passthrough:** YES (tokenize to single words, but also probe the whole phrase as a headword and prefer it when present).
+- **Source:** dump (not live API).
+- **Download permission:** granted. Staged under the already-gitignored `resources/`.
+
+**Dump scope decision (important):** use the *full raw English-Wiktionary extract*, NOT the
+English-only postprocessed file:
+- `https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz` — 2.9 GB compressed / 24.8 GB
+  uncompressed JSONL, one object per line, covers **hundreds of languages** at once (so
+  foreign-only headwords like "miserables" resolve with their own-language IPA).
+- The English-only postprocessed file (3.2 GB) is `lang_code=en` only and is marked DEPRECATED;
+  skip it.
+- Schema confirmed on the live file: top-level `word`, `lang` ("English"), `lang_code` ("en"),
+  `pos`, `etymology_number`, and `sounds: [{ipa, ...}]` where `ipa` may be `null` or wrapped in
+  `/.../` or `[...]`.
+
+**Lookup policy:** prefer `lang_code == "en"` first; if a token has no English entry, fall back
+to the first non-English entry and tag its `lang_code` in the artifact so downstream knows the
+source language.
+
+Implementation to proceed on branch `wiktionary-pipeline` (checkpoint tag
+`pre-wiktionary-checkpoint` created on `main` before the refactor).
 
 Assessment: the pivot is sound and it dissolves tickets 06/08/09/10, reducing 07 to a
 "pick first variant" rule we already implement. Strongly endorse. Plan below.
