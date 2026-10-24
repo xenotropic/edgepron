@@ -32,6 +32,7 @@ from edgepron.extraction import diaphonemes, extract_pronunciations, fetch_leads
 from edgepron.model import Entry
 from edgepron.respell import ipa_to_canonical_respell
 from edgepron.storage import write_condensed, write_sqlite, write_sqlite_lookup, write_tsv
+from edgepron.wiktionary import entries_from_wiktionary
 
 
 def _default_config_path() -> str:
@@ -56,6 +57,12 @@ def build_parser() -> argparse.ArgumentParser:
     discovery.add_argument("--min-pageviews", type=int, default=None)
     discovery.add_argument("--titles", default=None,
                            help="comma-separated explicit titles to fetch")
+    source = parser.add_argument_group("wiktionary pronunciation source")
+    source.add_argument("--wiktionary-dump", default=None,
+                        help="path to a raw enwiktionary JSONL(.gz); when set, "
+                             "pronunciations come from Wiktionary instead of Wikipedia leads")
+    source.add_argument("--no-phrase-passthrough", action="store_true",
+                        help="disable whole-phrase lookup fallback over word tokens")
     output = parser.add_argument_group("output (at least one required)")
     output.add_argument("--sqlite", default=None)
     output.add_argument("--sqlite-minimal", default=None,
@@ -117,14 +124,21 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     entries: list[Entry] = []
-    print("fetching lead sections...", file=sys.stderr)
-    for title, wikitext in fetch_leads(
-        titles, cfg.base_url, session, cfg.api_chunk_size,
-        cfg.rate_limit_sleep, cfg.timeout, cfg.max_retries,
-    ):
-        entry = _build_entry(title, extract_pronunciations(wikitext))
-        if entry is not None:
-            entries.append(entry)
+    if args.wiktionary_dump:
+        print(f"resolving {len(titles)} titles against Wiktionary dump...", file=sys.stderr)
+        entries = entries_from_wiktionary(
+            titles, args.wiktionary_dump,
+            phrase_passthrough=not args.no_phrase_passthrough,
+        )
+    else:
+        print("fetching lead sections...", file=sys.stderr)
+        for title, wikitext in fetch_leads(
+            titles, cfg.base_url, session, cfg.api_chunk_size,
+            cfg.rate_limit_sleep, cfg.timeout, cfg.max_retries,
+        ):
+            entry = _build_entry(title, extract_pronunciations(wikitext))
+            if entry is not None:
+                entries.append(entry)
 
     if args.sqlite:
         write_sqlite(entries, args.sqlite, low_memory=cfg.low_memory)

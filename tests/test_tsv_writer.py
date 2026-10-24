@@ -16,9 +16,9 @@ def test_plain_tsv(tmp_path):
     path = str(tmp_path / "out.tsv")
     assert write_tsv(ENTRIES, path) == 2
     lines = open(path, encoding="utf-8").read().splitlines()
-    assert lines[0] == "word\tipa\trespell\tipa_derived\trespell_derived\trespell_method\tsource"
-    assert lines[1] == "Istanbul\tˌɪstænˈbʊl\tIST-an-BUUL\t0\t0\t\twikipedia"
-    assert lines[2] == "Zeus\tzjuːs\tzy-oos\t0\t1\tcanonical\twikipedia"
+    assert lines[0] == "word\tipa\trespell\tipa_derived\trespell_derived\trespell_method\tsource\tlang"
+    assert lines[1] == "Istanbul\tˌɪstænˈbʊl\tIST-an-BUUL\t0\t0\t\twikipedia\t"
+    assert lines[2] == "Zeus\tzjuːs\tzy-oos\t0\t1\tcanonical\twikipedia\t"
 
 
 def test_gzip_tsv(tmp_path):

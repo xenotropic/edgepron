@@ -9,7 +9,7 @@ from collections.abc import Iterable
 
 from edgepron.model import Entry
 
-_HEADER = ["word", "ipa", "respell", "ipa_derived", "respell_derived", "respell_method", "source"]
+_HEADER = ["word", "ipa", "respell", "ipa_derived", "respell_derived", "respell_method", "source", "lang"]
 
 
 def _row(entry: Entry) -> list[str]:
@@ -21,6 +21,7 @@ def _row(entry: Entry) -> list[str]:
         "1" if entry.respell_derived else "0",
         entry.respell_method or "",
         entry.source,
+        entry.lang or "",
     ]
 
 
