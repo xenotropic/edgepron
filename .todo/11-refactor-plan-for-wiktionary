@@ -1,0 +1,66 @@
+I am a little bit daunted by the problems of extracting the data directly from Wikipedia. I think I'm inclined to shift towards a process of discovery on Wikipedia text, the exact process. I think we're probably sort of on the right path towards discovering the right words. Might add in spacy later to find more, but Wikipedia itself is not a very good source for pronunciations, it seems like, or at least of normalized, regularized data that can correlate. So I want to try to use what we're finding in Wikipedia. Tokenize it down to words rather than phrases (although we'll lose some things because maybe some people say their name in a special way, but I don't know. Gotta pick your battles) and then look up those for pronunciations in Wiktionary. Can you evaluate that as a plan and write out your plan as as reply in this ticket. This is meant as a way to get around all of the problems in ticket 6, 7, eight and nine and 10. And I think also maybe included that plan some version management stuff. I think if we're going to go down this way, it's kind of a pretty big refactoring, so we'll probably tag somehow, I guess, V.1 so that we can revert if the Wiktionary path doesn't seem that good. Consider also in your planning whether we need to download one big Wiktionary blob from kaikki.org (which is acceptable because this is meant to be an offline tool run as a pipeline to create the database as an artifact for the edge) versus hitting Wiktionary API and see if it has published rate limits (API is a preferable dependency because it's easier for me, but it might not be something Wikipedia wants or allows).
+
+==Reply (agent plan) — 2026-10-24 22:45 US/Pacific==
+
+Assessment: the pivot is sound and it dissolves tickets 06/08/09/10, reducing 07 to a
+"pick first variant" rule we already implement. Strongly endorse. Plan below.
+
+## Why this works
+- 06 (partial names): single-token headwords map 1:1 to Wiktionary entries; there is no name-scope to match.
+- 08 (wrong name / birth name): we look up the token itself, not a scraped lead that transcribes a nearby name.
+- 09 (scientific name): "beetle" is looked up directly; scientific names only appear if kept as candidates (we can drop/flag them).
+- 10 (mechanical artifacts): kaikki JSONL is structured (`sounds[].ipa`), no wikitext comment / `,_` cruft.
+- 07 (alt pronunciations): collapses to "first `sounds[].ipa` with `lang=en`".
+
+## Source decision: kaikki.org dump over live API (recommended)
+- kaikki.org English postprocessed JSONL ≈ **3.2 GB** compressed, 1,396,111 headwords,
+  extracted 2026-10-21 from the 2026-10-01 enwiktionary dump via wiktextract. Entries carry
+  `word`, `lang`/`lang_code`, `pos`, `forms`, `etymology`, and per-pronunciation `sounds[]`
+  with `ipa`. Caveat: that postprocessed page says "DEPRECATED, will be removed"; pin the
+  raw wiktextract JSONL URL as the durable source before building.
+- Live API: no hard per-request quota (standard MediaWiki `maxlag=5`), but bulk crawling is
+  against etiquette and returns un-structured `{{IPA}}` templates you'd re-parse by hand.
+  For an offline-pipeline → DB-artifact, the dump is the right dependency; the API can remain
+  an optional incremental fallback.
+- **>2 GB rule:** this exceeds AGENTS.md's 2 GB download threshold, so I need an explicit
+  go-ahead, and it would be staged under the gitignored `resources/`.
+
+## Tokenization tradeoff (your call)
+Single-word tokenization loses true multi-word pronunciations ("New Orleans" → "NOO OR-lənz",
+"Al Pacino" → surname only). Recommended default: tokenize to single words as primary BUT
+also probe whether the whole phrase is itself a Wiktionary headword (many proper nouns are)
+and prefer the full-phrase entry when present — recovers most names at zero cost. Confirmed
+decision needed from you: phrase-passthrough yes/no.
+
+## Lookup / first-IPA policy (deterministic)
+1. Normalize token (lowercase; diacritic-stripped fallback).
+2. Match headword; prefer exact `lang_code=en`.
+3. Take first English `sounds[].ipa`, skipping empty/audio-only.
+4. Homographs ("lead", "bow"): prefer etymology 1 by default; region preference (GenAm vs RP) as a later config.
+5. Feed the IPA through the existing `respell.ipa_to_canonical_respell` — the converter stays reusable.
+
+## Architecture (new package, storage untouched)
+- `edgepron/wiktionary/` exposing one interface with two providers:
+  - `dump.py` — stream/random-access the JSONL, then build a `word → ipa` SQLite index (instant queries after first build).
+  - `api.py` (optional) — single-word lookup for incremental updates.
+- A `wordify` step between discovery and lookup (phrase → tokens, with optional phrase passthrough).
+- New CLI flags: `--wiktionary`, `--wiktionary-dump PATH`, `--wiktionary-api`; discovery flags unchanged.
+- Storage writers and the `Entry` model stay the same shape.
+
+## Version management (revert point)
+- Tag current state BEFORE the refactor with a non-`v*` name so it does NOT trigger the
+  release workflow (per AGENTS.md, `v*` tags auto-publish a release):
+  `git tag pre-wiktionary-checkpoint && git push origin pre-wiktionary-checkpoint`
+- Do the refactor on a branch `wiktionary-pipeline`; merge to `main` only after a smoke-run
+  over the vital/popular set produces sane output. (Explicit tag instruction noted; no other tags.)
+
+## Step sequence (on your go-ahead)
+1. Tag checkpoint + branch.
+2. `wordify` discovery output.
+3. Fetch/parse kaikki dump → local `word → ipa` SQLite index.
+4. Lookup + first-English-IPA policy + reuse respell converter.
+5. Wire CLI, smoke-test, diff quality vs current Wikipedia direct-extraction.
+
+## Before coding, confirm three things
+(a) phrase-passthrough yes/no; (b) dump vs API (recommend dump); (c) permission to download
+the >2 GB kaikki dump during implementation.
