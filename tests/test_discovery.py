@@ -37,6 +37,8 @@ def test_is_mainspace_rejects_namespaces():
     assert not _is_mainspace("Wikipedia:Vital articles/Level/1")
     assert not _is_mainspace("Wikipedia talk:Vital articles/Level/1")
     assert not _is_mainspace("Category:People")
+    assert not _is_mainspace(":Category:People")
+    assert not _is_mainspace("m:List of articles every Wikipedia should have/Expanded")
     assert _is_mainspace("2001: A Space Odyssey")
 
 
@@ -56,11 +58,40 @@ def test_fetch_vital_titles_parses_articles_and_skips_chrome():
 
 def test_fetch_vital_titles_follows_sublist_transclusions():
     pages = {
-        "Wikipedia:Vital articles/Level 4": "{{Wikipedia:Vital articles/Level/4/People}}",
-        "Wikipedia:Vital articles/Level/4/People": "* [[Aristotle]]\n* [[Socrates]]\n",
+        "Wikipedia:Vital articles/Level 4": "{{Wikipedia:Vital articles/Level 4/People}}",
+        "Wikipedia:Vital articles/Level 4/People": "* [[Aristotle]]\n* [[Socrates]]\n",
     }
     titles = fetch_vital_titles(4, "http://example.invalid", _FakeSession(pages))
     assert titles == ["Aristotle", "Socrates"]
+
+
+def test_fetch_vital_titles_follows_sublist_wikilinks():
+    pages = {
+        "Wikipedia:Vital articles/Level 4": (
+            "{| class=\"wikitable\"\n"
+            "| [[Wikipedia:Vital articles/Level 4/People|People]] || 1,920\n"
+            "|-\n"
+            "| [[Wikipedia:Vital articles/Level 4/History|History]] || 700\n"
+            "|}\n"
+        ),
+        "Wikipedia:Vital articles/Level 4/People": "* [[Aristotle]]\n* [[Socrates]]\n",
+        "Wikipedia:Vital articles/Level 4/History": "* [[World War I]]\n",
+    }
+    titles = fetch_vital_titles(4, "http://example.invalid", _FakeSession(pages))
+    assert titles == ["Aristotle", "Socrates", "World War I"]
+
+
+def test_fetch_vital_titles_does_not_follow_other_level_sublinks():
+    pages = {
+        "Wikipedia:Vital articles/Level 4": (
+            "[[Wikipedia:Vital articles/Level/3|Level 3]] < "
+            "[[Wikipedia:Vital articles/Level 4/People|People]]\n"
+        ),
+        "Wikipedia:Vital articles/Level 4/People": "* [[Aristotle]]\n",
+        "Wikipedia:Vital articles/Level/3": "* [[Earth]]\n",
+    }
+    titles = fetch_vital_titles(4, "http://example.invalid", _FakeSession(pages))
+    assert titles == ["Aristotle"]
 
 
 def test_dedupe_preserves_first_seen_order():

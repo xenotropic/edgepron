@@ -1,5 +1,6 @@
 """Vital-articles discovery from the curated ``Wikipedia:Vital articles/Level N``
-list pages (including their transcluded topic subpages for the larger levels).
+list pages (including their topic subpages for the larger levels, which the
+index page links to with wikilinks rather than transcluding).
 """
 
 from __future__ import annotations
@@ -13,16 +14,40 @@ _BASE_NAMESPACES = {
     "file", "wikipedia", "category", "template", "help", "portal",
     "talk", "user", "draft", "module", "mediawiki", "special",
 }
+# Interwiki/interlanguage prefixes seen in the vital-article list chrome
+# (e.g. ``[[m:List of articles every Wikipedia should have/Expanded]]``).
+# These are not articles, so they must not be treated as mainspace.
+_INTERWIKI_PREFIXES = {
+    "m", "w", "meta", "mw", "commons", "simple", "species", "incubator",
+    "wikibooks", "wikidata", "wikinews", "wikiquote", "wikisource",
+    "wikiversity", "wikivoyage", "wiktionary",
+}
+
+
+def _normalize_title(title: str) -> str:
+    return (title or "").replace("_", " ").strip()
 
 
 def _is_mainspace(title: str) -> bool:
     """True if ``title`` is a plain article (no non-mainspace namespace)."""
+    if not title:
+        return False
+    if title.startswith(":"):
+        # ``[[:Category:...]]`` renders a link to a namespace page, not an article.
+        return False
     if ":" not in title:
         return True
     prefix = title.split(":", 1)[0].strip().lower()
-    if prefix in _BASE_NAMESPACES:
+    if prefix in _BASE_NAMESPACES or prefix in _INTERWIKI_PREFIXES:
         return False
     return not (prefix.endswith(" talk") and prefix[:-len(" talk")] in _BASE_NAMESPACES)
+
+
+def _is_sublist(target: str, level: int) -> bool:
+    """True if ``target`` is a topic subpage of the given vital-articles level
+    (e.g. ``Wikipedia:Vital articles/Level 4/People``) rather than the page
+    chrome (``.../Level/header``, ``.../Level/Nav bar``) or another level."""
+    return target.lower().startswith(f"wikipedia:vital articles/level {level}/")
 
 
 def fetch_vital_titles(
@@ -64,16 +89,22 @@ def _collect(page, level, base_url, session, timeout, max_retries, sleep, visite
         return
 
     for match in _LINK_RE.finditer(content):
-        target = match.group("target").strip()
-        if not _is_mainspace(target):
-            continue
-        titles.append(target)
+        target = _normalize_title(match.group("target"))
+        if _is_mainspace(target):
+            titles.append(target)
+        elif _is_sublist(target, level):
+            # Larger levels (4 and 5) are split across topic subpages that the
+            # index page links to with ordinary wikilinks (``[[...:Level 4/People|People]]``).
+            _collect(target, level, base_url, session, timeout, max_retries,
+                     sleep, visited, titles)
+            if sleep:
+                time.sleep(sleep)
 
     for match in _TRANSCLUSION_RE.finditer(content):
-        target = match.group(1).strip().replace("_", " ")
-        # Follow only the list subpages (e.g. ``.../Level/4/People``), not the
+        target = _normalize_title(match.group(1))
+        # Follow only the list subpages (e.g. ``.../Level 4/People``), not the
         # chrome (``.../Level/header``, ``.../Level/Nav bar``).
-        if target.lower().startswith(f"wikipedia:vital articles/level/{level}/"):
+        if _is_sublist(target, level):
             _collect(target, level, base_url, session, timeout, max_retries,
                      sleep, visited, titles)
             if sleep:
