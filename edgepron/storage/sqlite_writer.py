@@ -84,7 +84,7 @@ def write_sqlite_lookup(entries: Iterable[Entry], path: str, phonetic: str = "re
             key = entry.word.lower() if lowercase else entry.word
             conn.execute(
                 "INSERT OR REPLACE INTO pronunciations (word, phonetic) VALUES (?, ?)",
-                (key, clean_phonetic(value)),
+                (key, clean_phonetic(value, multiword=(" " in entry.word))),
             )
             written += 1
         conn.commit()

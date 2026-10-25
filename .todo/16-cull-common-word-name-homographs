@@ -1,0 +1,27 @@
+# Cull common-word/name homographs (separate process — needs a frequency list)
+
+## ==Original Issue / follow-on==
+
+Ticket 15 keeps words that have a proper-name sense. But some are *both* a very
+common English word and a (rarer) name, and still surface as noise in the
+dictionary: `Ginger` (spice / given name), `Bill` (invoice / William), `Ball`
+(sphere / surname), `saint` (holy person). A simple part-of-speech filter cannot
+separate these from genuine proper nouns like `Washington` (which also has a
+figurative noun sense) — the distinguishing factor is "how common is the
+common-word use", i.e. frequency data.
+
+## Plan (separate process)
+
+- Bring in a common-English-word frequency list (e.g. a top-N word list, an
+  English wordlist with frequency ranks, or Wiktionary/kaikki frequency data).
+- Drop a candidate if its (also-)common-noun sense ranks above some frequency
+  threshold AND the proper-name sense is a given name / surname — i.e. it is
+  "just a common word that is occasionally a name".
+- This correctly keeps people/places whose lowercase form is only a rare
+  technical homograph (e.g. `Newton`/`newton` the SI unit, `Bolívar`/`bolívar`
+  the currency, `Gilbert`/`gilbert` the CGS unit).
+- Emit a config knob (env var, like tickets 13/14) for the frequency cutoff.
+
+## ==Status Report: 2026-10-24 20:15 US/Pacific==
+Deferred to a separate process as instructed — not implemented in this pass.
+Left as an open to-do for a future turn.

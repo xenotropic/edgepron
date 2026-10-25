@@ -68,7 +68,7 @@ def write_condensed(entries: Iterable[Entry], path: str, phonetic: str = "respel
         for entry in entries:
             value = entry.respell if phonetic == "respell" else entry.ipa
             if value:
-                fh.write(f"{entry.word}\t{clean_phonetic(value)}\n")
+                fh.write(f"{entry.word}\t{clean_phonetic(value, multiword=(' ' in entry.word))}\n")
                 written += 1
 
     if path == "-":

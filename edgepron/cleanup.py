@@ -22,9 +22,19 @@ PARENS = _mode("EDGEPRON_PARENS", "strip")
 # ``keep`` leaves them.
 DASHES = _mode("EDGEPRON_DASHES", "remove")
 
+# Spaces: ``remove`` (default) drops syllable-separator spaces from a single
+# word's respelling (word-boundary spaces in multi-word phrases are kept);
+# ``keep`` leaves all spaces.
+SPACES = _mode("EDGEPRON_SPACES", "remove")
 
-def clean_phonetic(text: str | None) -> str:
-    """Apply the env-driven cleanup to a pronunciation string."""
+
+def clean_phonetic(text: str | None, multiword: bool = False) -> str:
+    """Apply the env-driven cleanup to a pronunciation string.
+
+    ``multiword`` tells the cleaner the headword is a multi-word phrase, so
+    spaces between its words are real word boundaries rather than syllable
+    separators.
+    """
     if not text:
         return ""
     out = text
@@ -32,7 +42,12 @@ def clean_phonetic(text: str | None) -> str:
         out = out.replace("-", "")
     if PARENS == "strip":
         out = out.replace("(", "").replace(")", "")
+    if SPACES == "remove":
+        if multiword:
+            out = " ".join(out.split())
+        else:
+            out = out.replace(" ", "")
     return out
 
 
-__all__ = ["clean_phonetic", "PARENS", "DASHES"]
+__all__ = ["clean_phonetic", "PARENS", "DASHES", "SPACES"]

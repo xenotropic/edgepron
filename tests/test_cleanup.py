@@ -1,6 +1,6 @@
 """Post-processing cleanup and non-English respell tests."""
 
-from edgepron.cleanup import DASHES, PARENS, clean_phonetic
+from edgepron.cleanup import DASHES, PARENS, SPACES, clean_phonetic
 from edgepron.extraction.diaphonemes import ipa_to_respell
 from edgepron.respell import ipa_to_canonical_respell
 
@@ -8,11 +8,18 @@ from edgepron.respell import ipa_to_canonical_respell
 def test_cleanup_defaults():
     assert PARENS == "strip"
     assert DASHES == "remove"
+    assert SPACES == "remove"
 
 
 def test_clean_phonetic_removes_dash_and_parens_by_default():
-    assert clean_phonetic("N(Y)OO awr-LEENZ") == "NYOO awrLEENZ"
+    # single word -> syllable-separator spaces removed too
+    assert clean_phonetic("N(Y)OO awr-LEENZ") == "NYOOawrLEENZ"
     assert clean_phonetic("ROOdo(l)f") == "ROOdolf"
+
+
+def test_clean_phonetic_keeps_word_boundaries_for_multiword():
+    # multi-word phrase -> the space is a real word boundary, kept (collapsed)
+    assert clean_phonetic("N(Y)OO  awr-LEENZ", multiword=True) == "NYOO awrLEENZ"
 
 
 def test_heuristic_respells_foreign_phonemes():

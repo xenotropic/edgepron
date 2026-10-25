@@ -1,0 +1,34 @@
+# Cull common nouns / single-char entries (keep proper nouns + foreign words)
+
+## ==Original Issue==
+
+The wordify/token step pulls in English common words that are not proper nouns
+and are useless to a TTS proper-noun dictionary. Examples in the current output:
+`Ginger`, `Ball`, `Bill`, single letters like `C`, `saint`, `lope`, `eco`.
+
+Wiktionary *does* carry the needed metadata — raw wiktextract tags each entry
+with a `pos` field (`"name"` = proper noun, `"noun"`/`"verb"`/`"adj"`/… =
+common; headwords are case-distinct for homographs: proper `Ginger` is
+capitalized, the spice `ginger` is lowercase).
+
+## Resolution / policy (implemented)
+
+An English candidate is:
+- **dropped** if it is a single character (length 1);
+- **kept** as a proper noun if it has a capitalized `name` sense (`pos` in
+  `NAME_POS` = name / proper noun / given name / surname / …);
+- **kept** as foreign vocabulary (tagged with its language) if there is no
+  English proper-name match but a non-English entry exists;
+- **dropped** otherwise (English word with no proper-name sense — e.g.
+  *ballad*, *ballet*, *ballroom*, *economic*, *complex*, *lope*, *eco*).
+
+Ambiguous homographs that are both a common word *and* a name (*ginger*,
+*Bill*, *Ball*, *saint*) are **kept for now** — culling them cleanly needs a
+common-words frequency list and is deferred to ticket 16 (separate process).
+
+## ==Status Report: 2026-10-24 20:15 US/Pacific==
+Implemented in `edgepron/wiktionary/dump.py` (`NAME_POS`, `_capitalized`, revised
+`scan` selection policy; single-char keys dropped). Validated against the live
+dump `pos` values. Verified: proper nouns kept (Pacino/Paris/Washington/Newton);
+common words dropped (ballad/ballet/economic/lope/eco); single letters gone.
+Tests updated (`tests/test_wiktionary.py`). Suite green.

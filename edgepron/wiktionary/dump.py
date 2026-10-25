@@ -27,16 +27,40 @@ def first_ipa(sounds: list) -> str | None:
     return None
 
 
+# Wiktionary proper-noun part-of-speech labels (raw wiktextract uses "name" for
+# people/places/works; keep a few aliases for safety).
+NAME_POS = frozenset({
+    "name", "proper noun", "proper name", "given name", "surname",
+    "family name", "toponym", "patronymic",
+})
+
+
+def _capitalized(word: str) -> bool:
+    return bool(word and word[0].isupper())
+
+
 def scan(gz_path: str, want: set[str] | list[str]) -> dict[str, tuple[str, str]]:
     """Stream ``gz_path`` once and return ``{normalized_key: (ipa, lang_code)}``.
 
-    For each wanted key the best pronunciation is chosen English-first, else the
-    first non-English language section encountered. Only keys present in
-    ``want`` are retained, so the 24.8 GB uncompressed stream is never held in
-    memory.
+    Only keys present in ``want`` are retained, so the 24.8 GB uncompressed
+    stream is never held in memory. Selection policy (tickets 11 + 15):
+
+    - single-character keys are dropped;
+    - an English proper name (capitalized headword, ``pos`` in ``NAME_POS``) is
+      preferred;
+    - an English word with no proper-name sense is dropped (it is a common word
+      — do NOT fall back to a same-spelling foreign entry, e.g. "ballet");
+    - a word with no English entry at all but a non-English entry is kept as
+      foreign vocabulary (tagged with its language code).
+
+    Ambiguous homographs that are both a common word *and* a name (*ginger*,
+    *Bill*, *Ball*, *saint*) are kept for now; culling them cleanly needs a
+    common-words frequency list — see ticket 16.
     """
-    wanted = {normalize_key(w) for w in want}
-    found: dict[str, list[tuple[str, str]]] = {w: [] for w in wanted}
+    wanted = {w for w in (normalize_key(x) for x in want) if len(w) > 1}
+    state: dict[str, dict] = {
+        w: {"proper": None, "en_common": False, "foreign": None} for w in wanted
+    }
 
     opening = gzip.open if gz_path.endswith(".gz") else open
     with opening(gz_path, "rt", encoding="utf-8", errors="replace") as fh:
@@ -45,20 +69,30 @@ def scan(gz_path: str, want: set[str] | list[str]) -> dict[str, tuple[str, str]]
                 entry = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            key = normalize_key(str(entry.get("word") or ""))
+            word = str(entry.get("word") or "")
+            key = normalize_key(word)
             if key not in wanted:
                 continue
             ipa = first_ipa(entry.get("sounds"))
             if not ipa:
                 continue
             lang = str(entry.get("lang_code") or entry.get("lang") or "?")
-            found[key].append((lang, ipa))
+            pos = str(entry.get("pos") or "").strip().lower()
+            rec = state[key]
+            if lang == "en":
+                if _capitalized(word) and pos in NAME_POS and rec["proper"] is None:
+                    rec["proper"] = ipa
+                elif pos and pos not in NAME_POS:
+                    rec["en_common"] = True
+            elif rec["foreign"] is None:
+                rec["foreign"] = (ipa, lang)
 
     result: dict[str, tuple[str, str]] = {}
-    for key, records in found.items():
-        if not records:
-            continue
-        english = next((r for r in records if r[0] == "en"), None)
-        best = english or records[0]
-        result[key] = (best[1], best[0])
+    for key, rec in state.items():
+        if rec["proper"] is not None:
+            result[key] = (rec["proper"], "en")
+        elif rec["en_common"]:
+            continue  # English common word; don't fall back to a foreign twin
+        elif rec["foreign"] is not None:
+            result[key] = rec["foreign"]
     return result

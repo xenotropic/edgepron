@@ -8,16 +8,28 @@ from edgepron.wiktionary.dump import first_ipa
 from edgepron.wiktionary.wordify import normalize_key
 
 ROWS = [
-    {"word": "Al Pacino", "lang": "English", "lang_code": "en",
+    {"word": "Al Pacino", "lang": "English", "lang_code": "en", "pos": "name",
      "sounds": [{"ipa": "/æl pəˈtʃiːnoʊ/"}]},
-    {"word": "Pacino", "lang": "English", "lang_code": "en",
+    {"word": "Pacino", "lang": "English", "lang_code": "en", "pos": "name",
      "sounds": [{"ipa": "/pəˈtʃiːnoʊ/"}]},
-    {"word": "miserables", "lang": "French", "lang_code": "fr",
+    {"word": "miserables", "lang": "French", "lang_code": "fr", "pos": "adj",
      "sounds": [{"ipa": "/mi.ze.ʁabl/"}]},
-    {"word": "chat", "lang": "English", "lang_code": "en",
-     "sounds": [{"ipa": "/tʃæt/"}]},
-    {"word": "chat", "lang": "French", "lang_code": "fr",
-     "sounds": [{"ipa": "/ʃa/"}]},
+    # proper name + lowercase common sense -> dropped (ambiguous/common word)
+    {"word": "Ginger", "lang": "English", "lang_code": "en", "pos": "name",
+     "sounds": [{"ipa": "/ˈdʒɪndʒə/"}]},
+    {"word": "ginger", "lang": "English", "lang_code": "en", "pos": "noun",
+     "sounds": [{"ipa": "/ˈdʒɪndʒə/"}]},
+    # pure common English noun -> dropped
+    {"word": "lope", "lang": "English", "lang_code": "en", "pos": "noun",
+     "sounds": [{"ipa": "/loʊp/"}]},
+    # proper noun with a capitalized (figurative) noun sense -> kept
+    {"word": "Paris", "lang": "English", "lang_code": "en", "pos": "name",
+     "sounds": [{"ipa": "/ˈpærɪs/"}]},
+    # common English word that also exists in French -> dropped (ticket 15)
+    {"word": "ballet", "lang": "English", "lang_code": "en", "pos": "noun",
+     "sounds": [{"ipa": "/bæˈleɪ/"}]},
+    {"word": "ballet", "lang": "French", "lang_code": "fr", "pos": "noun",
+     "sounds": [{"ipa": "/ba.lɛ/"}]},
 ]
 
 
@@ -43,20 +55,24 @@ def test_first_ipa_skips_null_and_strips_braces():
     assert first_ipa([{"ipa": "[fɹi]"}, {"ipa": "/fɹiː/"}]) == "fɹi"
 
 
-def test_scan_prefers_english_then_falls_back(tmp_path):
+def test_scan_prefers_proper_and_drops_common(tmp_path):
     path = str(tmp_path / "dump.jsonl.gz")
     _write_dump(path)
-    result = scan(path, ["pacino", "miserables", "chat", "al pacino"])
+    result = scan(path, ["pacino", "miserables", "ginger", "lope", "c", "paris", "al pacino", "ballet"])
     assert result["pacino"] == ("pəˈtʃiːnoʊ", "en")
-    assert result["miserables"] == ("mi.ze.ʁabl", "fr")
-    assert result["chat"] == ("tʃæt", "en")  # en wins over the fr entry
-    assert result["al pacino"] == ("æl pəˈtʃiːnoʊ", "en")
+    assert result["miserables"] == ("mi.ze.ʁabl", "fr")   # foreign kept
+    assert result["al pacino"] == ("æl pəˈtʃiːnoʊ", "en")  # phrase kept
+    assert result["paris"] == ("ˈpærɪs", "en")
+    assert result["ginger"] == ("ˈdʒɪndʒə", "en")  # has a proper-name sense -> kept
+    assert "lope" not in result     # common noun, no name sense -> dropped
+    assert "ballet" not in result   # English common word, don't keep foreign twin
+    assert "c" not in result        # single char -> dropped
 
 
 def test_entries_prefer_phrase_and_tag_language(tmp_path):
     path = str(tmp_path / "dump.jsonl.gz")
     _write_dump(path)
-    entries = entries_from_wiktionary(["Al Pacino", "miserables"], path)
+    entries = entries_from_wiktionary(["Al Pacino", "miserables", "lope"], path)
     words = {e.word: e for e in entries}
     assert set(words) == {"Al Pacino", "miserables"}
     assert words["Al Pacino"].ipa == "æl pəˈtʃiːnoʊ"

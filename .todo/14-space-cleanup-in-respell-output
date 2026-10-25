@@ -1,0 +1,24 @@
+# Space cleanup in respell output (env-var switch)
+
+## ==Original Issue==
+
+Respell output contains spaces between syllables of a single word (e.g.
+`mahrCHEHL law` for "Marcello", `seht soo kaw` for "Setsuko") because the
+Wiktionary IPA carries `.` syllable separators that the converter renders as
+spaces. Those should be removed by default, but spaces between *actual separate
+words* in a multi-word phrase must be kept (e.g. `Al Pacino`).
+
+## Requirements (resolved)
+
+- Top-level env var `EDGEPRON_SPACES=remove|keep` (default `remove`).
+- `remove`: for a single-word headword, drop all spaces (syllable separators);
+  for a multi-word headword, collapse whitespace to a single space (keep the
+  word boundary).
+- Applied only to the two-column *phonetic* output (condensed TSV + sqlite),
+  consistent with the dash/paren cleanup in ticket 13.
+
+## ==Status Report: 2026-10-24 20:00 US/Pacific==
+Implemented in `edgepron/cleanup.py` (`clean_phonetic(text, multiword=...)`;
+`multiword` is derived from whether the headword contains a space) and wired
+into `write_condensed` / `write_sqlite_lookup`. Tests updated
+(`tests/test_cleanup.py`). Suite green.
