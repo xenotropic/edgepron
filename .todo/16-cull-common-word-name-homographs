@@ -1,27 +1,94 @@
-# Cull common-word/name homographs (separate process — needs a frequency list)
+# Cull common-word/name homographs (architecture — not yet implemented)
 
 ## ==Original Issue / follow-on==
 
-Ticket 15 keeps words that have a proper-name sense. But some are *both* a very
-common English word and a (rarer) name, and still surface as noise in the
-dictionary: `Ginger` (spice / given name), `Bill` (invoice / William), `Ball`
-(sphere / surname), `saint` (holy person). A simple part-of-speech filter cannot
-separate these from genuine proper nouns like `Washington` (which also has a
-figurative noun sense) — the distinguishing factor is "how common is the
-common-word use", i.e. frequency data.
+Ticket 15 drops English words with no proper-name sense, but keeps any English
+`pos=="name"` sense. Leftover noise = **homographs**: an everyday lowercase
+common word that is *also* a personal name — `Ginger` (spice), `Bill` (invoice),
+`Ball` (sphere), `saint` (holy person), `river`, `willow`, `May`/`March` (month),
+`mark`.
 
-## Plan (separate process)
+These must be culled, but without culling genuine proper nouns whose lowercase
+form is only a *rare technical* homograph named after the person — `Newton`
+(newton, SI unit), `Watt`, `Pascal`, `Joule`, `Curie`, `Kelvin`, `Gilbert`
+(gilbert, CGS unit), `Bolívar` (bolívar, currency).
 
-- Bring in a common-English-word frequency list (e.g. a top-N word list, an
-  English wordlist with frequency ranks, or Wiktionary/kaikki frequency data).
-- Drop a candidate if its (also-)common-noun sense ranks above some frequency
-  threshold AND the proper-name sense is a given name / surname — i.e. it is
-  "just a common word that is occasionally a name".
-- This correctly keeps people/places whose lowercase form is only a rare
-  technical homograph (e.g. `Newton`/`newton` the SI unit, `Bolívar`/`bolívar`
-  the currency, `Gilbert`/`gilbert` the CGS unit).
-- Emit a config knob (env var, like tickets 13/14) for the frequency cutoff.
+A pure part-of-speech rule can't separate the two cases (both have a `name`
+sense and a `noun` sense). The discriminating factor is **how common the
+common-word use is** = word frequency.
 
-## ==Status Report: 2026-10-24 20:15 US/Pacific==
-Deferred to a separate process as instructed — not implemented in this pass.
-Left as an open to-do for a future turn.
+## Data probe findings (throwaway `resources/probe_ambig.py`, dump 2026-10-01)
+
+- wiktextract marks proper names with `pos=="name"` and the common homograph with
+  a **lowercase headword** — so "has an ambiguous homograph" is cheap to detect.
+- **Category signal:** senses named after a person (units/currencies) carry the
+  category **`English eponyms`**: present on `watt`, `joule`, `pascal`, `curie`,
+  `bolívar` — but **absent** on `newton` and `kelvin` (incomplete tagging). So
+  "eponyms" is a useful ~70% safety net, not a sole criterion.
+- No category marks "common everyday word" (`ball`→slang/ball-games, `bill`→law,
+  `ginger`→foods), so a general cull needs frequency, not categories alone.
+
+## Recommended architecture (two layers)
+
+### Layer 1 — frequency cull (primary)
+A small pinned **word-frequency table** (few-MB TSV of `word → Zipf`, top ~200k
+English words). Cull an ambiguous homograph when its lowercase common form's
+Zipf ≥ `EDGEPRON_COMMON_CUTOFF` (default 4.0; `0` disables culling). Everyday
+words (bill/ball ~5, ginger ~3.5) sit above the cutoff; unit/currency homographs
+(newton/watt ~2) sit below and are kept.
+
+- New module `edgepron/wiktionary/frequency.py`: lazy-load the table into a
+  `dict[str, float]`, expose `zipf_of(word)` and `is_common(word)`.
+- New function in `scan()`: only for the *ambiguous* set (has en `name` AND en
+  lowercase common), apply the frequency decision. Zero cost to the 24.8 GB bulk
+  stream (a handful of dict lookups at the end).
+
+### Layer 2 — eponym override (zero-dependency safety net)
+If the lowercase common sense's `categories` include `English eponyms` (or a
+small marker set: "SI units", "units of measure", "currencies"), force KEEP
+regardless of frequency. Protects watt/pascal/joule/curie/bolívar even if the
+frequency list is missing them or the cutoff is aggressive. (Still doesn't save
+newton/kelvin — those rely on Layer-1 low frequency.)
+
+### Config surface (env vars, matching tickets 13/14)
+- `EDGEPRON_COMMON_WORD_CULLING=on|off` (default `on` once implemented).
+- `EDGEPRON_FREQUENCY_LIST=<path>` — the frequency TSV to load.
+- `EDGEPRON_COMMON_CUTOFF=<zipf>` — default 4.0.
+
+## Data provenance (new external dependency, like the kaikki dump)
+- A second downloaded data file, few MB, staged under gitignored `resources/`,
+  documented in `docs/data-sources.md` (URL, license, date, how to update).
+- Source candidates (license-clean, small, downloadable as plain TSV):
+  1. **SUBTLEX-US Zipf** (`word → Zipf`, subtitle-derived; free for research) — recommended.
+  2. **wordfreq** (`zipf_frequency`) — clean API, but pulls a heavy pip
+     dependency + compiled data; rejected in favor of a plain data file
+     (matches the repo's "separable, updateable" preference).
+  3. **Norvig `count_1w.txt`** (333k Google-Trillion counts) — free for research;
+     needs log-count → Zipf conversion.
+
+## Alternatives already rejected
+- Pure category heuristic (no frequency): nothing marks "common word".
+- Hand stoplist: not scalable/maintainable.
+- Case-only rule: already covered; can't split bill vs newton.
+
+## Open decisions for the user (before implementation)
+1. Frequency source: SUBTLEX-US Zipf (recommend) vs wordfreq vs Norvig.
+2. Default cutoff: Zipf 4.0 reasonable?
+3. Default the culling ON or OFF for the next run (recommend ON at 4.0, then
+   eyeball the diff)?
+4. Keep the `English eponyms` override? (recommend yes)
+
+## Validation plan
+- Throwaway script comparing cull/keep for the known set: ginger/bill/ball/
+  saint/river/willow/may/march/mark → cull; newton/watt/pascal/joule/curie/
+  gilbert/kelvin/bolívar → keep; then eyeball a sample of the resulting TSV
+  before merging the change.
+
+## ==Status Report: 2026-10-24 20:45 US/Pacific==
+Architecture written (this ticket), grounded in a real dump probe
+(`resources/probe_ambig.py`). No implementation yet — awaiting the four
+decisions above. Throwaway probe left in `resources/` for reference (gitignored).
+==reply==
+this seems generally right. I would also be happy to lose "names that are common in english". The end goal here is to guide tts engines with rare words, so like now we have John, 
+Greta, Jackie, Grant, Monroe, Elizabeth, Tom, James, Anna, etc. I would also like to lose those as the tts engines should be fine with those, and also it wastes space. Is there sufficient data in anyway to get a sort of "Common-in-English-ness" rating and drop strings that are really common? Also seems like we should be dropping ones that are identical, e.g., Brown==brown. 
+If Wiktionary (which is not Wikitionary btw, you keep writing it that way in filenames) can adequately provide this data, that's great to have fewer dependencies; if we have to go furhter afield, that can be fine but need to keep licensing compatible with cc-by-sa such that the entire ouput can be licnsed as cc-by-sa (so source more permissive is probably fine; more restrictive probably not)
