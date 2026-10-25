@@ -1,0 +1,47 @@
+# Non-English phonemes need respelling (foreign IPA passes through literally)
+
+## ==Original Issue==
+
+The Wiktionary pipeline pulls IPA for words of many languages (French, German,
+Polish, Mandarin, …). The respell converter is English-only, so non-English
+phonemes leak through literally in the respelled output — e.g. from
+`resources/output-v4-p500-wiktionary.tsv`:
+
+- `Dietrich` → `DEE-tʁiç`  (uvular r `ʁ`, palatal fricative `ç`)
+- `Murakami` → `mu-.ʁa.ka.mi`
+- `Sienkiewicz` → `ɕe-NGKYE-.vit͡ʂ`
+- `Miró` → `mi-ɾU`  (alveolar tap `ɾ`)
+- `Mickiewicz` → `mi-T͡SKYE`  (tie-bar affricate `t͡s`)
+
+The IPA column is correct; only the **respelling** is garbage because the
+converter has no mapping for these symbols (unknown symbols either raise —
+falling back to the heuristic pass-through — or are emitted as-is).
+
+## Investigation notes (agent)
+
+Two respell paths exist:
+1. **canonical** `edgepron/respell/` (ported from ipa-to-pronunciation-respelling):
+   `mappings.py` `CONSONANT_SYMBOLS` / `VOWEL_SYMBOLS`. Already has a few
+   `reference-foreign` entries (`x`→kh, `y`→ue, `œ`→eu, `ɑ̃/ɛ̃/ɔ̃/œ̃`) but is
+   missing the common uvular/palatal/tap/sibilant set. Unknown symbols raise
+   `ValueError`.
+2. **heuristic** `edgepron.extraction.diaphonemes.ipa_to_respell` (fallback):
+   `IPA_TO_RESPELL` + `_NUCLEI`. Unknown tokens pass through literally.
+
+Both need the foreign set added so the canonical path succeeds (producing
+cleaner, space-separated respell) and the heuristic no longer leaks raw symbols.
+
+## ==Status Report: 2026-10-24 19:30 US/Pacific==
+Implemented. Foreign phoneme set added to BOTH paths:
+- `edgepron/respell/mappings.py` — canonical symbols (ʁ→r, ç→kh, ɲ→ny, ʎ→ly,
+  ɾ/ɽ→r, ʂ/ɕ→sh, ʐ/ʑ→zh, χ→kh, ɣ→g, β→b, ɸ→f, c→k, ɟ→j, ɢ→g, ɬ→thl, ʋ→v,
+  ʀ→r, ɧ→sh, ʈ→t, ɖ→d, ɲ→n(ɳ→n), ɭ→l, ʈʂ→ch, ɖʐ→j; vowels ɨ→i, ʉ→oo, ø→eu,
+  ɵ→uh, ɤ→uh, ɯ→oo, ɶ→a) as `reference-foreign`.
+- `edgepron/extraction/diaphonemes.py` — heuristic `IPA_TO_RESPELL` / `_NUCLEI`
+  extended with the same set; `_tokenize_ipa` now skips length/half-length marks,
+  tie bars, and combining diacritics (they no longer leak through).
+
+Live check: `diːtʁɪç` → canonical `deetrihkh`, heuristic `DEE-trikh`;
+`juːˌnaɪtɨd` → `ewneyetid` (no ɨ). Updated `tests/test_respell.py` REJECTED
+lists to the remaining truly-unsupported set (q, ħ, ɴ, ɥ, ɰ, ʝ / ɞ) and added
+`tests/test_cleanup.py`. Suite: 166 passed.

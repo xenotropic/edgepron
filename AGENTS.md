@@ -87,6 +87,25 @@ GitHub Release attached to the tag. Only do this when explicitly instructed.
 - Throwaway planning notes/scratch files that should not be published live in
   the gitignored `resources/` directory. You should feel welcome to download other data sources, make throwaway scripts, or use other things that you need to in that file. Ask for user permission before downloading something that's going to be bigger than 2 gb
 
+## Output artifact naming
+
+Generated artifacts that live in `resources/` for human review (run outputs,
+example TSVs) must be timestamped in **US/Pacific** time, embedded in the
+filename so runs are distinguishable at a glance. Pattern used in this repo:
+
+    <basename>-<mon><day>-<H><MM><am|pm>[-<suffix>].tsv
+
+e.g. `output-v4-p500-oct24-729pm-wiktionary.tsv` (vital level 4 + popular 500,
+Wiktionary source, created Oct 24 7:29 PM Pacific). Generate the tag with:
+
+```bash
+TZ=America/Los_Angeles date '+%b%d-%I%M%p'   # e.g. Oct24-0729PM
+```
+
+then lowercase the leading month/`am`/`pm` to match the repo convention. These
+artifacts stay under the gitignored `resources/` directory (never committed);
+the timestamp exists purely for human orientation.
+
 ## Notifications to User
 
 Send the user an ntfy push alert at two specific, mandatory points in every

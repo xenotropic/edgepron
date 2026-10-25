@@ -14,6 +14,7 @@ by ``|``; Wikipedia renders hyphens between them and marks stress with capitals.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from edgepron.extraction._ipac_table import IPAC_EN_TO_IPA  # noqa: F401
 
@@ -39,9 +40,17 @@ _NUCLEI = frozenset({
     "uː", "u", "ʊ", "ʊr", "ʊər", "ʊəˈr", "ʊəˌr",
     "aɪ", "aɪər", "aʊ", "aʊər", "ʌ", "ʌr",
     "ɜː", "ɜːr", "ə", "ər", "əl", "ən", "əm", "juː", "jʊər",
+    # foreign vowels (non-English headwords)
+    "ɨ", "ʉ", "ø", "œ", "ɵ", "ɤ", "ɐ", "ɯ", "ɶ", "y", "ɘ", "ɜ",
+    "ɑ̃", "ɛ̃", "ɔ̃", "œ̃",
 })
 
 _STRESS = {"ˈ", "ˌ"}
+
+# IPA marks that carry no sound of their own (length, half-length, tie bars);
+# dropped during respelling tokenization. Combining diacritics (category "Mn")
+# are also skipped.
+_IGNORED_IPA = frozenset({"\u02d0", "\u02d1", "\u0361", "\u035c"})
 
 # IPA -> pronunciation respelling (Help:Pronunciation respelling key), extended
 # with the IPAc-en yod-cluster / r-colored diaphonemes.
@@ -72,6 +81,16 @@ IPA_TO_RESPELL = {
     "sj": "sy", "ʃ": "sh", "t": "t", "tj": "ty", "tʃ": "ch",
     "θ": "th", "θj": "thy", "v": "v", "w": "w", "x": "kh",
     "z": "z", "zj": "zy", "ʒ": "zh", "ʔ": "",
+    # foreign consonants (non-English headwords)
+    "ʁ": "r", "ç": "kh", "ɲ": "ny", "ʎ": "ly", "ɾ": "r", "ɽ": "r",
+    "ʂ": "sh", "ʐ": "zh", "ɕ": "sh", "ʑ": "zh", "χ": "kh", "ɣ": "g",
+    "β": "b", "ɸ": "f", "c": "k", "ɟ": "j", "ɢ": "g", "ɬ": "thl",
+    "ʋ": "v", "ʀ": "r", "ɧ": "sh", "ʈ": "t", "ɖ": "d", "ɳ": "n",
+    "ɭ": "l", "ʈʂ": "ch", "ɖʐ": "j", "ɦ": "h",
+    # foreign vowels
+    "ɨ": "i", "ʉ": "oo", "ø": "eu", "œ": "eu", "ɵ": "uh", "ɤ": "uh",
+    "ɐ": "uh", "ɯ": "oo", "ɶ": "a", "y": "ue", "ɘ": "uh", "ɜ": "ur",
+    "ɑ̃": "on", "ɛ̃": "an", "ɔ̃": "on", "œ̃": "un",
 }
 
 # respelling -> IPA. Inverse of the key above (first-wins for the few genuinely
@@ -143,7 +162,11 @@ def normalize_respell(params) -> str | None:
 
 
 def _tokenize_ipa(ipa: str) -> list[str]:
-    """Longest-match tokenization of an IPA string into diaphonemes."""
+    """Longest-match tokenization of an IPA string into diaphonemes.
+
+    Length/half-length marks, tie bars, and combining diacritics are skipped so
+    they never leak into the respelling.
+    """
     keys = sorted((k for k in IPA_TO_RESPELL if len(k) > 1), key=len, reverse=True)
     tokens: list[str] = []
     i = 0
@@ -151,6 +174,9 @@ def _tokenize_ipa(ipa: str) -> list[str]:
         ch = ipa[i]
         if ch in _STRESS:
             tokens.append(ch)
+            i += 1
+            continue
+        if ch in _IGNORED_IPA or unicodedata.category(ch) == "Mn":
             i += 1
             continue
         for key in keys:

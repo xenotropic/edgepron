@@ -10,7 +10,7 @@ def _rows(path):
     conn = sqlite3.connect(path)
     try:
         return conn.execute(
-            "SELECT word, ipa, respell, ipa_derived, respell_derived, respell_method, source "
+            "SELECT word, ipa, respell, ipa_derived, respell_derived, respell_method, source, lang "
             "FROM pronunciations ORDER BY word").fetchall()
     finally:
         conn.close()
@@ -28,8 +28,8 @@ def test_write_and_readback(tmp_path):
 
     rows = _rows(path)
     assert rows == [
-        ("Istanbul", "ˌɪstænˈbʊl", "IST-an-BUUL", 0, 0, None, "wikipedia"),
-        ("Zeus", "zjuːs", "zy-oos", 0, 1, "canonical", "wikipedia"),
+        ("Istanbul", "ˌɪstænˈbʊl", "IST-an-BUUL", 0, 0, None, "wikipedia", None),
+        ("Zeus", "zjuːs", "zy-oos", 0, 1, "canonical", "wikipedia", None),
     ]
 
 
@@ -69,8 +69,8 @@ def test_sqlite_lookup_lowercases_and_keeps_accents(tmp_path):
     ]
     assert write_sqlite_lookup(entries, path) == 2
     assert _lookup_rows(path) == [
-        ("istanbul", "IST-an-BUUL"),
-        ("ångström", "ANG-struhm"),
+        ("istanbul", "ISTanBUUL"),
+        ("ångström", "ANGstruhm"),
     ]
 
 

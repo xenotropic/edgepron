@@ -102,6 +102,34 @@ CONSONANT_SYMBOLS = [
     affricate("ʤ", "j", support="safe-alias"),
     affricate("ʦ", "ts", support="safe-alias"),
     affricate("ʧ", "ch", support="safe-alias"),
+    # foreign consonants (non-English headwords)
+    fricative("ʁ", "r", support="reference-foreign"),
+    fricative("ç", "kh", support="reference-foreign"),
+    nasal("ɲ", "ny", support="reference-foreign"),
+    liquid("ʎ", "ly", support="reference-foreign"),
+    liquid("ɾ", "r", support="reference-foreign"),
+    liquid("ɽ", "r", support="safe-alias"),
+    fricative("ʂ", "sh", support="reference-foreign"),
+    fricative("ʐ", "zh", support="reference-foreign"),
+    fricative("ɕ", "sh", support="reference-foreign"),
+    fricative("ʑ", "zh", support="reference-foreign"),
+    fricative("χ", "kh", support="reference-foreign"),
+    fricative("ɣ", "g", support="reference-foreign"),
+    fricative("β", "b", support="reference-foreign"),
+    fricative("ɸ", "f", support="reference-foreign"),
+    stop("c", "k", support="reference-foreign"),
+    stop("ɟ", "j", support="reference-foreign"),
+    stop("ɢ", "g", support="reference-foreign"),
+    fricative("ɬ", "thl", support="reference-foreign"),
+    fricative("ʋ", "v", support="reference-foreign"),
+    liquid("ʀ", "r", support="reference-foreign"),
+    fricative("ɧ", "sh", support="reference-foreign"),
+    stop("ʈ", "t", support="reference-foreign"),
+    stop("ɖ", "d", support="reference-foreign"),
+    nasal("ɳ", "n", support="reference-foreign"),
+    liquid("ɭ", "l", support="reference-foreign"),
+    affricate("ʈʂ", "ch", support="reference-foreign"),
+    affricate("ɖʐ", "j", support="reference-foreign"),
 ]
 
 VOWEL_SYMBOLS = [
@@ -163,6 +191,14 @@ VOWEL_SYMBOLS = [
     vowel("ɛ̃", "an", support="reference-foreign"),
     vowel("ɔ̃", "on", support="reference-foreign"),
     vowel("œ̃", "un", support="reference-foreign"),
+    # foreign vowels (non-English headwords)
+    vowel("ɨ", "i", support="reference-foreign"),
+    vowel("ʉ", "oo", support="reference-foreign"),
+    vowel("ø", "eu", support="reference-foreign"),
+    vowel("ɵ", "uh", support="reference-foreign"),
+    vowel("ɤ", "uh", support="reference-foreign"),
+    vowel("ɯ", "oo", support="reference-foreign"),
+    vowel("ɶ", "a", support="reference-foreign"),
 ]
 
 SYMBOLS = CONSONANT_SYMBOLS + VOWEL_SYMBOLS

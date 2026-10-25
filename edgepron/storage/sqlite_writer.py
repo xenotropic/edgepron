@@ -7,6 +7,7 @@ import sqlite3
 from collections.abc import Iterable
 
 from edgepron.model import Entry
+from edgepron.cleanup import clean_phonetic
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pronunciations (
@@ -16,7 +17,8 @@ CREATE TABLE IF NOT EXISTS pronunciations (
     ipa_derived     INTEGER NOT NULL DEFAULT 0,
     respell_derived INTEGER NOT NULL DEFAULT 0,
     respell_method  TEXT,
-    source          TEXT NOT NULL DEFAULT 'wikipedia'
+    source          TEXT NOT NULL DEFAULT 'wikipedia',
+    lang            TEXT
 ) WITHOUT ROWID;
 """
 
@@ -34,11 +36,11 @@ def write_sqlite(entries: Iterable[Entry], path: str, low_memory: bool = True) -
         conn.execute(_SCHEMA)
         conn.executemany(
             "INSERT OR REPLACE INTO pronunciations "
-            "(word, ipa, respell, ipa_derived, respell_derived, respell_method, source) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "(word, ipa, respell, ipa_derived, respell_derived, respell_method, source, lang) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 (e.word, e.ipa, e.respell, int(e.ipa_derived), int(e.respell_derived),
-                 e.respell_method, e.source)
+                 e.respell_method, e.source, e.lang)
                 for e in entries
             ),
         )
@@ -82,7 +84,7 @@ def write_sqlite_lookup(entries: Iterable[Entry], path: str, phonetic: str = "re
             key = entry.word.lower() if lowercase else entry.word
             conn.execute(
                 "INSERT OR REPLACE INTO pronunciations (word, phonetic) VALUES (?, ?)",
-                (key, value),
+                (key, clean_phonetic(value)),
             )
             written += 1
         conn.commit()

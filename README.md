@@ -4,11 +4,15 @@ A Python utility that builds a pronunciation dictionary for text-to-speech
 (TTS) engines — targeting the proper nouns, foreign words, foreign phrases,
 abbreviations, and acronyms that TTS systems typically mispronounce.
 
-edgepron extracts pronunciations from English Wikipedia (lead-section
-`{{IPAc-en}}` and `{{respell}}` templates), and is planned to fall back to
-Wiktionary, Wikidata lexemes, and grapheme-to-phoneme (G2P) conversion to fill
-gaps. The result is an offline, read-optimized dictionary mapping each word or
-phrase to its IPA and/or respelling.
+edgepron **discovers** candidate terms from English Wikipedia (the Vital Articles
+hierarchy + top pageviews), then **looks up their pronunciations** in an offline
+English Wiktionary dump (wiktextract via kaikki.org), converting IPA to a
+pronunciation respelling. Direct lead-section template extraction from Wikipedia
+(`{{IPAc-en}}` / `{{respell}}`) remains available as the default engine; a
+Wikidata/G2P fallback is planned. The result is an offline, read-optimized
+dictionary mapping each word or phrase to its IPA and/or respelling. See
+[`docs/data-sources.md`](docs/data-sources.md) for how to obtain the Wiktionary
+dump and reconstruct the environment.
 
 > 🚧 **Work in progress.** The repository is being scaffolded. See
 > [`.todo/`](.todo) for the phased architecture and open tickets.
@@ -31,12 +35,19 @@ python -m edgepron.cli --vital-level 0 --titles "Istanbul,Zeus,Yosemite,Earth" \
 # production scale: vital level 4 + top 5000 viewed (last month)
 python -m edgepron.cli --vital-level 4 --popular-limit 5000 \
   --popularity-timeframe last-month --sqlite dist/production_pronunc.db
+
+# Wiktionary pronunciation source (offline, recommended for clean IPA):
+# 1. download the raw dump once (see docs/data-sources.md; ~2.9 GB, gitignored)
+# 2. resolve discoveries against it instead of Wikipedia lead templates
+python -m edgepron.cli --vital-level 4 --popular-limit 500 \
+  --wiktionary-dump resources/enwiktionary-20261001-raw.jsonl.gz \
+  --condensed dist/lookup.tsv
 ```
 
 Output formats (all opt-in):
 
 - `--sqlite PATH` — full `WITHOUT ROWID` SQLite
-  (`word, ipa, respell, ipa_derived, respell_derived, respell_method, source`).
+  (`word, ipa, respell, ipa_derived, respell_derived, respell_method, source, lang`).
 - `--sqlite-minimal PATH` — deployment two-column `word -> phonetic` SQLite
   (keys lowercased, accents preserved; respell by default, `--condensed-phonetic
   ipa` to switch).

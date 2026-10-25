@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 SOURCE_WIKIPEDIA = "wikipedia"
+SOURCE_WIKTIONARY = "wiktionary"
 
 
 @dataclass
@@ -25,3 +26,7 @@ class Entry:
     # "heuristic" (legacy diaphonemes.ipa_to_respell fallback).
     respell_method: str | None = None
     source: str = SOURCE_WIKIPEDIA
+    # ISO 639 source-language code when the entry comes from a non-English
+    # Wiktionary section (e.g. "fr" for a French-only headword). None when the
+    # language is English or not applicable.
+    lang: str | None = None

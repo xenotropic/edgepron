@@ -1,0 +1,35 @@
+# Optional-segment parentheses and dashes in respell output
+
+## ==Original Issue==
+
+Respell output contains parentheses around optional segments (dialect/region
+variants) and hyphens/dashes:
+
+- parentheses: `ROOdo(l)f`, `N(Y)OO awrLEENZ`, `KAH(R)lihn`, `MA(H)ST`
+- dashes: `DEE-tʁiç`, `bʁi-.zhit`, `FʁEE-.dʁiç`
+
+The parenthesized content is "may or may not be pronounced" material. On review
+we'd rather **pronounce it** (sounds better with the optional segment than
+without), but the literal parentheses are unwanted in the TTS-facing string.
+Dashes (syllable/hyphen separators) should likewise be removed by default.
+
+## Requirements (resolved)
+
+- **Top-level environment variable** (module-level constant read from the
+  environment) for each:
+  - `EDGEPRON_PARENS` — `strip` (default): drop the `(` `)` but keep the
+    content; `keep`: leave `(...)` as-is.
+  - `EDGEPRON_DASHES` — `remove` (default): drop `-`; `keep`: leave `-`.
+- Apply to the two-column *phonetic* output (condensed TSV + sqlite lookup), not
+  to the underlying `Entry`/full TSV (which remain the raw diagnostic form).
+
+## ==Status Report: 2026-10-24 19:30 US/Pacific==
+Implemented. New `edgepron/cleanup.py` reads module-level env vars
+(`EDGEPRON_PARENS=strip|keep`, default `strip`; `EDGEPRON_DASHES=remove|keep`,
+default `remove`) and exposes `clean_phonetic()`. Wired into the two-column
+writers (`write_condensed`, `write_sqlite_lookup`) so the emittted *phonetic*
+value has parentheses stripped (content kept) and dashes removed by default —
+the raw `Entry`/full-TSV forms are untouched. Updated the condensed/sqlite
+writer tests for the new defaults and added `tests/test_cleanup.py`. Live check:
+`N(Y)OO awr-LEENZ` → `NYOO awrLEENZ` (default) vs `N(Y)OO awr-LEENZ` with
+`EDGEPRON_PARENS=keep EDGEPRON_DASHES=keep`.

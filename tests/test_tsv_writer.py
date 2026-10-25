@@ -16,9 +16,9 @@ def test_plain_tsv(tmp_path):
     path = str(tmp_path / "out.tsv")
     assert write_tsv(ENTRIES, path) == 2
     lines = open(path, encoding="utf-8").read().splitlines()
-    assert lines[0] == "word\tipa\trespell\tipa_derived\trespell_derived\trespell_method\tsource"
-    assert lines[1] == "Istanbul\tˌɪstænˈbʊl\tIST-an-BUUL\t0\t0\t\twikipedia"
-    assert lines[2] == "Zeus\tzjuːs\tzy-oos\t0\t1\tcanonical\twikipedia"
+    assert lines[0] == "word\tipa\trespell\tipa_derived\trespell_derived\trespell_method\tsource\tlang"
+    assert lines[1] == "Istanbul\tˌɪstænˈbʊl\tIST-an-BUUL\t0\t0\t\twikipedia\t"
+    assert lines[2] == "Zeus\tzjuːs\tzy-oos\t0\t1\tcanonical\twikipedia\t"
 
 
 def test_gzip_tsv(tmp_path):
@@ -35,8 +35,8 @@ def test_condensed_tsv_prefers_respell(tmp_path):
     assert write_condensed(ENTRIES, path, phonetic="respell") == 2
     lines = open(path, encoding="utf-8").read().splitlines()
     assert lines[0] == "word\tphonetic"
-    assert lines[1] == "Istanbul\tIST-an-BUUL"
-    assert lines[2] == "Zeus\tzy-oos"
+    assert lines[1] == "Istanbul\tISTanBUUL"
+    assert lines[2] == "Zeus\tzyoos"
 
 
 def test_condensed_tsv_ipa_choice(tmp_path):
@@ -55,4 +55,4 @@ def test_condensed_skips_missing_form(tmp_path):
 def test_condensed_stdout_headerless(capsys):
     assert write_condensed(ENTRIES, "-", phonetic="respell", header=False) == 2
     out = capsys.readouterr().out
-    assert out == "Istanbul\tIST-an-BUUL\nZeus\tzy-oos\n"
+    assert out == "Istanbul\tISTanBUUL\nZeus\tzyoos\n"
