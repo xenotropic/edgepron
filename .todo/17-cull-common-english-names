@@ -9,3 +9,52 @@ common name may resolve via a foreign section, e.g. Greta→pl). Caveat: a few
 names also name places/civilizations (Georgia, Jordan, Maya) and will be culled
 too — the user accepted that trade-off. List is intentionally conservative and
 can be swapped for a fuller SSA-style list later. 
+==reply==
+So, how did you do this? What is a source of truth as to what is a common given name or a common surname? 
+
+==Answer (agent, 2026-10-24)==
+
+Honest answer first: **the current list is hand-curated, not derived from any
+downloaded dataset.** I wrote `COMMON_GIVEN_NAMES`/`COMMON_SURNAMES` from memory
+of well-known "most common names" rankings. It is intentionally conservative and
+NOT backed by a pinned, reproducible source of truth. That's a real gap worth
+fixing if we want this defensible.
+
+The proper sources of truth, both **public domain (US government works)** and
+free to download/redistribute:
+
+- **Given names — SSA baby names** (Social Security Administration,
+  ssa.gov/oact/babynames): per-year `yob1880-…txt` files of every name and its
+  frequency, national top-1000/decade. This is the canonical "common American
+  given name" dataset.
+- **Surnames — US Census** "Frequently Occurring Surnames" (2010 Census,
+  census.gov): a single ranked table of ~162k surnames with counts (top-N = the
+  common surnames).
+
+Both are tiny (tens of MB), plain text, license-clean, and fit the repo's
+"separable/updateable data" preference. The UK analogues (ONS baby names /
+surname tables) are less openly redistributable, so SSA + Census is the
+pragmatic Anglophone proxy.
+
+Proposed plan to make it reproducible:
+
+1. Download SSA `yob` data + the Census surname table once into gitignored
+   `resources/` (well under the 2 GB rule).
+2. A small generator (throwaway script in `resources/`, or a committed script)
+   parses them and regenerates `common_names.py` as a pinned snapshot — e.g.
+   **top 500 male + top 500 female** given names, **top 1000** surnames, tagged
+   with the source + snapshot date.
+3. Keep the cutoff levels as constants/config so we can widen/narrow later.
+
+Two nuances to decide when we do it:
+- SSA top lists include high-ranking non-Anglo given names (Jose, Maria,
+  Muhammad, etc.). For an English TTS those are still common-and-easy, so
+  culling them is consistent with the goal; but if you'd rather keep them, we can
+  intersect with an "English-origin" filter (harder) or just accept them.
+- The current code culls *surnames* globally too; the Census list will naturally
+  include Nguyen/Garcia/Patel/Kim in its top ranks, which for *surnames* are
+  exactly the non-English names we decided to KEEP. So the Common-surnames list
+  should either stay English-origin-only (as now) or be rebuilt from an
+  English-origin subset — worth an explicit decision.
+
+Want me to swap the hand list for the SSA + Census snapshot next? 
