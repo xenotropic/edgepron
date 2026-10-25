@@ -89,6 +89,14 @@ Architecture written (this ticket), grounded in a real dump probe
 (`resources/probe_ambig.py`). No implementation yet — awaiting the four
 decisions above. Throwaway probe left in `resources/` for reference (gitignored).
 ==reply==
-this seems generally right. I would also be happy to lose "names that are common in english". The end goal here is to guide tts engines with rare words, so like now we have John, 
-Greta, Jackie, Grant, Monroe, Elizabeth, Tom, James, Anna, etc. I would also like to lose those as the tts engines should be fine with those, and also it wastes space. Is there sufficient data in anyway to get a sort of "Common-in-English-ness" rating and drop strings that are really common? Also seems like we should be dropping ones that are identical, e.g., Brown==brown. 
-If Wiktionary (which is not Wikitionary btw, you keep writing it that way in filenames) can adequately provide this data, that's great to have fewer dependencies; if we have to go furhter afield, that can be fine but need to keep licensing compatible with cc-by-sa such that the entire ouput can be licnsed as cc-by-sa (so source more permissive is probably fine; more restrictive probably not)
+This seems a little bit too complicated. Like, I'm not sure that the problem as you state it is really a problem. If you are a proper noun that is also a personal name, it will almost always be said in the way that the common noun is (this is true of all you list except maybe bolivar but i'm willing to take that loss -- and ones like it, I think -- for the simplicity). I think we can just replace almost all of this with a rule that wikipedia labels it as a common noun, then we just cull it out. 
+
+==Status Report: 2026-10-24 22:10 US/Pacific==
+Simplified per the reply. The frequency-list architecture is dropped. `scan()`
+now **culls any English key that has a lowercase common-noun sense** (i.e.
+Wiktionary labels it a common word), even when a capitalized name sense also
+exists — so ginger/bill/ball/saint AND newton/watt/pascal/bolívar/curie/kelvin
+are all culled (the recognized, accepted loss: unit/currency and name are mostly
+pronounced alike). Pure proper nouns (Pacino/Paris/Washington) and foreign-only
+words (miserables) are untouched. Tests updated; suite green. 
+

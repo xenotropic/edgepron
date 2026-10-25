@@ -46,16 +46,13 @@ def scan(gz_path: str, want: set[str] | list[str]) -> dict[str, tuple[str, str]]
     stream is never held in memory. Selection policy (tickets 11 + 15):
 
     - single-character keys are dropped;
-    - an English proper name (capitalized headword, ``pos`` in ``NAME_POS``) is
-      preferred;
-    - an English word with no proper-name sense is dropped (it is a common word
-      — do NOT fall back to a same-spelling foreign entry, e.g. "ballet");
-    - a word with no English entry at all but a non-English entry is kept as
-      foreign vocabulary (tagged with its language code).
-
-    Ambiguous homographs that are both a common word *and* a name (*ginger*,
-    *Bill*, *Ball*, *saint*) are kept for now; culling them cleanly needs a
-    common-words frequency list — see ticket 16.
+    - an English key that has a *lowercase common-noun* sense is dropped — it is
+      a common word even if it also carries a name sense (ginger/Bill/Ball/saint,
+      and likewise newton/watt/bolívar per ticket 16);
+    - else an English proper name (capitalized headword, ``pos`` in ``NAME_POS``)
+      wins;
+    - else a non-English entry is kept as foreign vocabulary (tagged with its
+      language code). An English common word never falls back to a foreign twin.
     """
     wanted = {w for w in (normalize_key(x) for x in want) if len(w) > 1}
     state: dict[str, dict] = {
@@ -82,17 +79,17 @@ def scan(gz_path: str, want: set[str] | list[str]) -> dict[str, tuple[str, str]]
             if lang == "en":
                 if _capitalized(word) and pos in NAME_POS and rec["proper"] is None:
                     rec["proper"] = ipa
-                elif pos and pos not in NAME_POS:
+                elif word and word[0].islower() and pos and pos not in NAME_POS:
                     rec["en_common"] = True
             elif rec["foreign"] is None:
                 rec["foreign"] = (ipa, lang)
 
     result: dict[str, tuple[str, str]] = {}
     for key, rec in state.items():
+        if rec["en_common"]:
+            continue  # English common word — cull even if it also has a name sense
         if rec["proper"] is not None:
             result[key] = (rec["proper"], "en")
-        elif rec["en_common"]:
-            continue  # English common word; don't fall back to a foreign twin
         elif rec["foreign"] is not None:
             result[key] = rec["foreign"]
     return result

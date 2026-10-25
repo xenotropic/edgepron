@@ -22,6 +22,17 @@ def test_clean_phonetic_keeps_word_boundaries_for_multiword():
     assert clean_phonetic("N(Y)OO  awr-LEENZ", multiword=True) == "NYOO awrLEENZ"
 
 
+def test_clean_phonetic_removes_periods():
+    assert clean_phonetic("MA.RI.YS") == "MARIYS"
+
+
+def test_heuristic_drops_tone_and_accent_marks():
+    for ipa in ("kwaːŋ¹", "bàː.búr", "ˈmaː.ri.ʏs", "t͡ɕʊwŋ˧˧"):
+        out = ipa_to_respell(ipa)
+        for bad in ("ː", "¹", "˧", "à", "ú", "ʏ", ".", "ⁿ", "\u0361"):
+            assert bad not in out, (ipa, out, bad)
+
+
 def test_heuristic_respells_foreign_phonemes():
     out = ipa_to_respell("ˈdiːtʁɪç")
     assert "ʁ" not in out

@@ -2,6 +2,9 @@
 
 from edgepron.wiktionary.build import entries_from_wiktionary
 from edgepron.wiktionary.dump import scan
-from edgepron.wiktionary.wordify import normalize_key, phrase_and_tokens
+from edgepron.wiktionary.wordify import is_roman_numeral, normalize_key, phrase_and_tokens
 
-__all__ = ["entries_from_wiktionary", "scan", "normalize_key", "phrase_and_tokens"]
+__all__ = [
+    "entries_from_wiktionary", "scan", "normalize_key", "phrase_and_tokens",
+    "is_roman_numeral",
+]

@@ -1,0 +1,11 @@
+given names in here that are so common in the English language that they don't need a special spelling and a special spelling is more likely to mess them up for a TTS. We're really looking for things that are statistically unlikely in English. Greta, Sophia, Sarah, John, Mary, Bob, Georgia, Joan, Mark, Andy, Alexander. That any TTS engine is going to know how to say. I also would not mind taking out common English surnames if that's possible. 
+
+==Status Report: 2026-10-24 22:10 US/Pacific==
+Implemented. New `edgepron/wiktionary/common_names.py` carries curated
+`COMMON_GIVEN_NAMES` + `COMMON_SURNAMES` (English-origin surnames only, so
+Nguyen/Garcia/Patel/Kim etc. stay). `entries_from_wiktionary` drops any resolved
+entry whose lowercase form is in that set, regardless of resolved language (a
+common name may resolve via a foreign section, e.g. Greta→pl). Caveat: a few
+names also name places/civilizations (Georgia, Jordan, Maya) and will be culled
+too — the user accepted that trade-off. List is intentionally conservative and
+can be swapped for a fuller SSA-style list later. 

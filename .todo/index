@@ -1,21 +1,23 @@
-Next open ticket: 17
+Next open ticket: 19
 
 ## Open
-16-cull-common-word-name-homographs (Cline Difficulty Rating: 6)
-15-cull-common-nouns-and-single-char (Cline Difficulty Rating: 4)
+18-remove-roman-numeral-entries (Cline Difficulty Rating: 1)
+17-cull-common-english-names (Cline Difficulty Rating: 3)
+16-cull-common-word-name-homographs (Cline Difficulty Rating: 3)
 14-space-cleanup-in-respell-output (Cline Difficulty Rating: 2)
-13-parentheses-and-dashes-cleanup (Cline Difficulty Rating: 2)
 12-non-english-phoneme-respelling (Cline Difficulty Rating: 4)
-11-refactor-plan-for-wiktionary (Cline Difficulty Rating: 6)
-10-mechanical-artifacts-in-extracted-phonetics (Cline Difficulty Rating: 2)
-09-scientific-name-instead-of-common-name (Cline Difficulty Rating: 7)
-08-pronunciation-paired-with-wrong-name (Cline Difficulty Rating: 7)
-07-alt-pronunciations (Cline Difficulty Rating: 2)
-06-full-vs-partial-names-mismatches (Cline Difficulty Rating: 7)
 02-evaluate spacy to find targets (Cline Difficulty Rating: 4)
 0-architecture (Cline Difficulty Rating: 1)
 
 ## Closed
+15-cull-common-nouns-and-single-char-CLOSED
+13-parentheses-and-dashes-cleanup-CLOSED
+11-refactor-plan-for-wiktionary-CLOSED
+10-mechanical-artifacts-in-extracted-phonetics-CLOSED
+09-scientific-name-instead-of-common-name-CLOSED
+08-pronunciation-paired-with-wrong-name-CLOSED
+07-alt-pronunciations-CLOSED
+06-full-vs-partial-names-mismatches-CLOSED
 05-minimal-sqlite-lookup-CLOSED
 04-ipa-to-pronunciation-respelling-CLOSED
 03-respell-as-default-output-CLOSED

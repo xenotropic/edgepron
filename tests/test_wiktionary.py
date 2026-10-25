@@ -5,7 +5,7 @@ import json
 
 from edgepron.wiktionary import entries_from_wiktionary, phrase_and_tokens, scan
 from edgepron.wiktionary.dump import first_ipa
-from edgepron.wiktionary.wordify import normalize_key
+from edgepron.wiktionary.wordify import is_roman_numeral, normalize_key
 
 ROWS = [
     {"word": "Al Pacino", "lang": "English", "lang_code": "en", "pos": "name",
@@ -30,6 +30,11 @@ ROWS = [
      "sounds": [{"ipa": "/bæˈleɪ/"}]},
     {"word": "ballet", "lang": "French", "lang_code": "fr", "pos": "noun",
      "sounds": [{"ipa": "/ba.lɛ/"}]},
+    # roman numeral + common given name -> culled (tickets 18, 17)
+    {"word": "XV", "lang": "English", "lang_code": "en", "pos": "name",
+     "sounds": [{"ipa": "/ˈɛks ˈviː/"}]},
+    {"word": "John", "lang": "English", "lang_code": "en", "pos": "name",
+     "sounds": [{"ipa": "/dʒɒn/"}]},
 ]
 
 
@@ -63,10 +68,25 @@ def test_scan_prefers_proper_and_drops_common(tmp_path):
     assert result["miserables"] == ("mi.ze.ʁabl", "fr")   # foreign kept
     assert result["al pacino"] == ("æl pəˈtʃiːnoʊ", "en")  # phrase kept
     assert result["paris"] == ("ˈpærɪs", "en")
-    assert result["ginger"] == ("ˈdʒɪndʒə", "en")  # has a proper-name sense -> kept
-    assert "lope" not in result     # common noun, no name sense -> dropped
+    assert "ginger" not in result      # common word + name -> culled per ticket 16
+    assert "lope" not in result        # common noun, no name sense -> dropped
     assert "ballet" not in result   # English common word, don't keep foreign twin
     assert "c" not in result        # single char -> dropped
+
+
+def test_is_roman_numeral():
+    assert is_roman_numeral("XV")
+    assert is_roman_numeral("VIII")
+    assert not is_roman_numeral("Li")
+    assert not is_roman_numeral("mix")
+    assert not is_roman_numeral("X")  # single letter handled separately
+
+
+def test_roman_and_common_names_culled(tmp_path):
+    path = str(tmp_path / "dump.jsonl.gz")
+    _write_dump(path)
+    entries = entries_from_wiktionary(["XV", "John", "Paris"], path)
+    assert {e.word for e in entries} == {"Paris"}
 
 
 def test_entries_prefer_phrase_and_tag_language(tmp_path):

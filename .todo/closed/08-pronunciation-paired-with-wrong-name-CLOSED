@@ -40,3 +40,5 @@ pronunciation may be absent from the lead title. A robust fix would require
 understanding which word each template attaches to (proximity + dialogue about
 name types), i.e. an NLP/LLM pass — not a mechanical rule. Left for human
 review; likely a candidate for the post-extraction LLM cleanup idea.
+==reply==
+Please close. This is fixed by the new Wiktionary architecture. 

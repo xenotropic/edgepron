@@ -31,3 +31,11 @@ def phrase_and_tokens(title: str, phrase_passthrough: bool = True) -> list[str]:
         if token not in keys:
             keys.append(token)
     return keys
+
+
+_ROMAN_RE = re.compile(r"[IVXLCDM]{2,}")
+
+
+def is_roman_numeral(word: str) -> bool:
+    """True if ``word`` is entirely uppercase roman-numeral letters (XV, VIII)."""
+    return bool(_ROMAN_RE.fullmatch((word or "").strip()))

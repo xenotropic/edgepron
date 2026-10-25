@@ -23,3 +23,5 @@ would require reading the prose (an LLM/NLP pass). Whether the *correct*
 behavior is to expand (synthesize the obvious parts) or to accept scoped
 entries is a product decision left for human review. Candidate for the
 post-extraction cleanup pass rather than a mechanical fix. 
+==reply==
+Please close. This is fixed by the new Wiktionary architecture. 

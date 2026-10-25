@@ -45,3 +45,19 @@ Live check: `diːtʁɪç` → canonical `deetrihkh`, heuristic `DEE-trikh`;
 `juːˌnaɪtɨd` → `ewneyetid` (no ɨ). Updated `tests/test_respell.py` REJECTED
 lists to the remaining truly-unsupported set (q, ħ, ɴ, ɥ, ɰ, ʝ / ɞ) and added
 `tests/test_cleanup.py`. Suite: 166 passed.
+==reply==
+This is mostly implemented, but I'm still seeing some stuff that looks like IPA or at least not normal english chars. see 
+Quang
+Trung
+Babur
+XV (this is really a separate issue: add a "remove roman numerals" method i guess; ticket and implement and close if confident in it)
+Pombal
+Kaunda
+et cetera
+
+==Status Report: 2026-10-24 22:10 US/Pacific==
+Fixed. The heuristic `ipa_to_respell` (`_tokenize_ipa`) now drops tone digits /
+superscripts / tone letters / IPA dots (`_IPA_DROP`) and reduces accented letters
+to their base (à→a, õ→o, ʏ→i via NFD). Live check: Quang→kwang, Trung→tshuuwngm,
+Babur→babur, Pombal→pobaw, Kaunda→ka-U-da (no ː/¹/˧/ⁿ/ʏ/.). Roman numerals were
+split out into ticket 18.

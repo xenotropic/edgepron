@@ -22,3 +22,9 @@ Implemented in `edgepron/cleanup.py` (`clean_phonetic(text, multiword=...)`;
 `multiword` is derived from whether the headword contains a space) and wired
 into `write_condensed` / `write_sqlite_lookup`. Tests updated
 (`tests/test_cleanup.py`). Suite green.
+==reply==
+Good as far as it goes. It looks like we have at least one instance, now a couple of instances with dots where people are using them as some sort of accent marker, so the examples are Marius and Antoni. Need to just remove those periods. 
+
+==Status Report: 2026-10-24 22:10 US/Pacific==
+Implemented. `clean_phonetic` now also strips `.` (accent/syllable markers) from
+the phonetic value, so Marius/Antoni no longer carry dotted respellings. 

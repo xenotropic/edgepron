@@ -32,3 +32,5 @@ Implemented in `edgepron/wiktionary/dump.py` (`NAME_POS`, `_capitalized`, revise
 dump `pos` values. Verified: proper nouns kept (Pacino/Paris/Washington/Newton);
 common words dropped (ballad/ballet/economic/lope/eco); single letters gone.
 Tests updated (`tests/test_wiktionary.py`). Suite green.
+==reply==
+This can be marked as closed. To the extent this still exists, it is in ticket 16

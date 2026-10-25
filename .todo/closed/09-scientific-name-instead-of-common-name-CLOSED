@@ -34,3 +34,5 @@ would still miss the fact that the common name often has no transcription at
 all. Deterministic fix not reliable. Left for human review; good candidate for
 an LLM cleanup pass or for explicitly emitting the scientific name as a separate
 entry rather than substituting.
+==reply==
+Please close. This is fixed by the new Wiktionary architecture. 

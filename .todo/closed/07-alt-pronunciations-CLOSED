@@ -31,3 +31,5 @@ kept (the IPA-derived path already truncated at the comma in `_ipa_to_respell`).
 Live-checked against the real "Marcello Mastroianni" lead:
 `mar-CHEL-oh-_-MA(H)ST-roh-YA(H)N-ee` (alternates dropped). Added
 `test_respell_alternates_are_truncated_at_comma`. Full suite: 174 passed.
+==reply==
+Please close. This is fixed by the new Wiktionary architecture. 

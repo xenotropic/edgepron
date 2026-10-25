@@ -1,0 +1,23 @@
+# Remove roman-numeral entries
+
+## ==Original Issue==
+
+Discovery tokenizes multi-word titles, and roman numerals surface as garbage
+entries with wrong pronunciations — e.g. from the current output:
+`XV → khʷ`, `VIII → VI.iʲ`, `XII → khee`, `II → ai⁵⁵ai⁵⁵`. These come from
+`Louis XIV`, `World War II`, `Chapter VIII`, etc. A TTS app does not need
+"pronunciations" for roman numerals.
+
+## Resolution (proposed)
+
+Drop any single-token candidate whose stripped form is entirely roman-numeral
+characters — `^[IVXLCDM]{2,}$` (length 2+; the single letters are already
+dropped by the single-character rule). Case-insensitive but roman numerals are
+normally uppercase in titles; require all-caps to avoid touching words like
+"di"/"mix" (those are common nouns and already culled by ticket 16 anyway).
+
+## ==Status Report: 2026-10-24 22:10 US/Pacific==
+Implemented. `edgepron/wiktionary/wordify.is_roman_numeral()` matches
+`^[IVXLCDM]{2,}$` (uppercase only, so "Li"/"mix" are safe), and
+`entries_from_wiktionary` drops such tokens. `XV/VIII/XII/II` etc. are gone from
+the output.

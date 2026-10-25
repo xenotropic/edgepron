@@ -42,7 +42,7 @@ _NUCLEI = frozenset({
     "ɜː", "ɜːr", "ə", "ər", "əl", "ən", "əm", "juː", "jʊər",
     # foreign vowels (non-English headwords)
     "ɨ", "ʉ", "ø", "œ", "ɵ", "ɤ", "ɐ", "ɯ", "ɶ", "y", "ɘ", "ɜ",
-    "ɑ̃", "ɛ̃", "ɔ̃", "œ̃",
+    "ɑ̃", "ɛ̃", "ɔ̃", "œ̃", "a", "e", "o", "ɔ", "ʏ", "ɞ",
 })
 
 _STRESS = {"ˈ", "ˌ"}
@@ -51,6 +51,15 @@ _STRESS = {"ˈ", "ˌ"}
 # dropped during respelling tokenization. Combining diacritics (category "Mn")
 # are also skipped.
 _IGNORED_IPA = frozenset({"\u02d0", "\u02d1", "\u0361", "\u035c"})
+
+# Additional non-decomposing marks to drop rather than leak: superscript tone
+# digits, superscript/modifier releases, tone letters, and the IPA syllable dot.
+_IPA_DROP = frozenset(
+    "\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079"  # superscript digits
+    "\u207f\u1d51\u1d50\u02b0\u02b1\u02b2\u02b7\u02e0\u02e4\u02c0"  # superscript releases
+    "\u02e7\u02e5\u02e9\u02e6\u02e8"                                # tone letters
+    "."                                                             # syllable separator dot
+)
 
 # IPA -> pronunciation respelling (Help:Pronunciation respelling key), extended
 # with the IPAc-en yod-cluster / r-colored diaphonemes.
@@ -91,6 +100,8 @@ IPA_TO_RESPELL = {
     "ɨ": "i", "ʉ": "oo", "ø": "eu", "œ": "eu", "ɵ": "uh", "ɤ": "uh",
     "ɐ": "uh", "ɯ": "oo", "ɶ": "a", "y": "ue", "ɘ": "uh", "ɜ": "ur",
     "ɑ̃": "on", "ɛ̃": "an", "ɔ̃": "on", "œ̃": "un",
+    # plain/foreign base vowels (also the stripped form of accented vowels)
+    "a": "a", "e": "e", "o": "o", "ɔ": "aw", "ʏ": "i", "ɞ": "uh",
 }
 
 # respelling -> IPA. Inverse of the key above (first-wins for the few genuinely
@@ -176,7 +187,7 @@ def _tokenize_ipa(ipa: str) -> list[str]:
             tokens.append(ch)
             i += 1
             continue
-        if ch in _IGNORED_IPA or unicodedata.category(ch) == "Mn":
+        if ch in _IGNORED_IPA or unicodedata.category(ch) in ("Mn", "Lm", "Sk", "No"):
             i += 1
             continue
         for key in keys:
@@ -185,7 +196,16 @@ def _tokenize_ipa(ipa: str) -> list[str]:
                 i += len(key)
                 break
         else:
-            tokens.append(ch)
+            # Unknown multi-char symbol: if it is a known single phoneme use it
+            # directly; otherwise reduce accented letters to their base (à->a,
+            # õ->o) and drop tones/superscripts/dots so nothing non-English
+            # leaks through.
+            if ch in IPA_TO_RESPELL:
+                tokens.append(ch)
+            else:
+                base = unicodedata.normalize("NFD", ch)[0]
+                if base not in _IPA_DROP:
+                    tokens.append(base)
             i += 1
     return tokens
 

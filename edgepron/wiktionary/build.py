@@ -7,8 +7,9 @@ from collections.abc import Iterable
 from edgepron.extraction import diaphonemes
 from edgepron.model import SOURCE_WIKTIONARY, Entry
 from edgepron.respell import ipa_to_canonical_respell
+from edgepron.wiktionary.common_names import COMMON_NAMES
 from edgepron.wiktionary.dump import scan
-from edgepron.wiktionary.wordify import normalize_key, phrase_and_tokens
+from edgepron.wiktionary.wordify import is_roman_numeral, normalize_key, phrase_and_tokens
 
 
 def _respell_from_ipa(ipa: str) -> tuple[str | None, str | None]:
@@ -71,4 +72,14 @@ def entries_from_wiktionary(
             continue
         for token in keys[start:]:
             _append(entries, seen, token, ipa_map)
+
+    # tickets 18 + 17: drop roman numerals and very-common English names —
+    # a TTS already says these correctly so they are pure noise. Names are culled
+    # regardless of resolved language (a common name like "Greta" may resolve via
+    # a foreign section but is still a common name).
+    entries = [
+        e for e in entries
+        if not is_roman_numeral(e.word)
+        and normalize_key(e.word) not in COMMON_NAMES
+    ]
     return entries

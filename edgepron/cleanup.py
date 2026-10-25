@@ -42,6 +42,9 @@ def clean_phonetic(text: str | None, multiword: bool = False) -> str:
         out = out.replace("-", "")
     if PARENS == "strip":
         out = out.replace("(", "").replace(")", "")
+    # Periods in respellings are accent/syllable markers, never wanted in a
+    # TTS string (ticket 14).
+    out = out.replace(".", "")
     if SPACES == "remove":
         if multiword:
             out = " ".join(out.split())
