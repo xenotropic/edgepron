@@ -7,6 +7,7 @@ import sqlite3
 from collections.abc import Iterable
 
 from edgepron.model import Entry
+from edgepron.cleanup import clean_phonetic
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pronunciations (
@@ -83,7 +84,7 @@ def write_sqlite_lookup(entries: Iterable[Entry], path: str, phonetic: str = "re
             key = entry.word.lower() if lowercase else entry.word
             conn.execute(
                 "INSERT OR REPLACE INTO pronunciations (word, phonetic) VALUES (?, ?)",
-                (key, value),
+                (key, clean_phonetic(value)),
             )
             written += 1
         conn.commit()

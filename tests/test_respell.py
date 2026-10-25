@@ -131,9 +131,11 @@ CONVERTER_CASES = [
     ("ər", "er"),
 ]
 
-# Phonemes the canonical scheme deliberately refuses to approximate.
-REJECTED_CONSONANTS = ["q", "ɢ", "ɟ", "χ", "ʁ", "ħ", "ʎ", "ɳ", "ɴ", "ɾ", "ɽ", "ɥ", "ɰ", "ʝ", "ç", "ʈ"]
-REJECTED_VOWELS = ["ø", "ɶ", "ɨ", "ʉ", "ɯ", "ɵ", "ɤ", "ɞ"]
+# Phonemes the canonical scheme still refuses to approximate — rare / typologically
+# exotic set only. The common foreign set (uvular r, palatal fricative, taps,
+# retroflexes, centralized vowels, …) is now approximated; see ticket 12.
+REJECTED_CONSONANTS = ["q", "ħ", "ɴ", "ɥ", "ɰ", "ʝ"]
+REJECTED_VOWELS = ["ɞ"]
 REJECTED_DETAILS = {
     "ẽ": "ẽ contains unsupported symbol(s) around: \"\u0303\".",
     "n̥": "n̥ contains unsupported symbol(s) around: \"\u0325\".",

@@ -8,6 +8,7 @@ import sys
 from collections.abc import Iterable
 
 from edgepron.model import Entry
+from edgepron.cleanup import clean_phonetic
 
 _HEADER = ["word", "ipa", "respell", "ipa_derived", "respell_derived", "respell_method", "source", "lang"]
 
@@ -67,7 +68,7 @@ def write_condensed(entries: Iterable[Entry], path: str, phonetic: str = "respel
         for entry in entries:
             value = entry.respell if phonetic == "respell" else entry.ipa
             if value:
-                fh.write(f"{entry.word}\t{value}\n")
+                fh.write(f"{entry.word}\t{clean_phonetic(value)}\n")
                 written += 1
 
     if path == "-":

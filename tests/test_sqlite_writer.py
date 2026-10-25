@@ -69,8 +69,8 @@ def test_sqlite_lookup_lowercases_and_keeps_accents(tmp_path):
     ]
     assert write_sqlite_lookup(entries, path) == 2
     assert _lookup_rows(path) == [
-        ("istanbul", "IST-an-BUUL"),
-        ("ångström", "ANG-struhm"),
+        ("istanbul", "ISTanBUUL"),
+        ("ångström", "ANGstruhm"),
     ]
 
 
